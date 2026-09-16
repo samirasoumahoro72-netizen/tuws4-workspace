@@ -751,7 +751,7 @@ export const TeamPage: React.FC = () => {
           <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-primary-container">
-                Avatar du collaborateur
+                Photo du collaborateur
               </label>
               {formData.avatar_url && formData.avatar_url.startsWith('data:image') && (
                 <button
@@ -779,7 +779,7 @@ export const TeamPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center overflow-hidden ring-2 ring-surface-container shadow-xs">
                   <img
                     src={formData.avatar_url || generateAvatarByGender(formData.full_name, formData.gender)}
-                    alt="Avatar collaborateur"
+                    alt="Photo collaborateur"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -804,15 +804,11 @@ export const TeamPage: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="shadow-xs"
                   >
-                    {formData.avatar_url?.startsWith('data:image') ? 'Changer mon fichier' : 'Importer une photo depuis l\'ordinateur'}
+                    {formData.avatar_url?.startsWith('data:image') ? 'Changer la photo' : 'Importer une photo depuis l\'ordinateur'}
                   </Button>
-                  {formData.avatar_url?.startsWith('data:image') ? (
+                  {formData.avatar_url?.startsWith('data:image') && (
                     <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <Icon name="check_circle" className="text-[12px]" /> Photo personnalisée active
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-medium text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Icon name="user" className="text-[11px]" /> Avatar {formData.gender === 'female' ? 'Femme' : 'Homme'}
                     </span>
                   )}
                 </div>
