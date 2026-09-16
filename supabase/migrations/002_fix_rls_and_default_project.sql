@@ -1,135 +1,16 @@
 -- ==============================================================================
--- TUWSHIUAH WORKSPACE - MIGRATION 002 : CORRECTION RLS & ESPACE GÉNÉRAL & SUPPRESSION DE COMPTE
+-- TUWSHIUAH WORKSPACE - MIGRATION 002 : CORRECTION RLS FICHIERS, DOSSIERS & PROFILES
 -- ==============================================================================
 
--- 1. SUPPRESSION DU PROJET FICTIF "ESPACE GÉNÉRAL" (Si présent en base)
+-- 1. RENDRE LES COLONNES PROJECT_ID OPTIONNELLES DANS FILES ET FOLDERS
+-- Permet de créer des dossiers et téléverser des fichiers dans l'espace général de l'agence sans projet
+ALTER TABLE public.files ALTER COLUMN project_id DROP NOT NULL;
+ALTER TABLE public.folders ALTER COLUMN project_id DROP NOT NULL;
+
+-- 2. SUPPRESSION DU PROJET FICTIF "ESPACE GÉNÉRAL" (Si présent en base)
 DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000001' OR name ILIKE '%Espace Général%';
 
--- ==============================================================================
--- 2. FONCTION DE VÉRIFICATION D'APPARTENANCE PROJET (AMÉLIORÉE)
--- ==============================================================================
-
-CREATE OR REPLACE FUNCTION public.is_project_member(
-  p_id UUID,
-  user_uid UUID DEFAULT auth.uid()
-)
-RETURNS BOOLEAN
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.projects p
-    WHERE p.id = p_id
-      AND (
-        -- L'espace général est accessible à tous les membres connectés
-        p.id = '00000000-0000-0000-0000-000000000001'
-        -- Le créateur est toujours membre de son projet
-        OR p.created_by = user_uid
-        -- Membre assigné
-        OR EXISTS (
-          SELECT 1
-          FROM public.project_members pm
-          WHERE pm.project_id = p_id
-            AND pm.user_id = user_uid
-        )
-      )
-  );
-$$;
-
--- ==============================================================================
--- 3. POLITIQUES RLS SUR LA TABLE PROJECTS
--- ==============================================================================
-
-DROP POLICY IF EXISTS "projects_select" ON public.projects;
-CREATE POLICY "projects_select"
-ON public.projects
-FOR SELECT
-TO authenticated
-USING (
-  id = '00000000-0000-0000-0000-000000000001'
-  OR public.is_admin()
-  OR public.is_project_member(id)
-  OR created_by = auth.uid()
-);
-
-DROP POLICY IF EXISTS "projects_insert_authenticated" ON public.projects;
-CREATE POLICY "projects_insert_authenticated"
-ON public.projects
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  created_by = auth.uid()
-  OR public.is_admin()
-  OR id = '00000000-0000-0000-0000-000000000001'
-);
-
-DROP POLICY IF EXISTS "projects_update_creator_admin" ON public.projects;
-CREATE POLICY "projects_update_creator_admin"
-ON public.projects
-FOR UPDATE
-TO authenticated
-USING (
-  created_by = auth.uid()
-  OR public.is_admin()
-)
-WITH CHECK (
-  created_by = auth.uid()
-  OR public.is_admin()
-);
-
-DROP POLICY IF EXISTS "projects_delete_creator_admin" ON public.projects;
-CREATE POLICY "projects_delete_creator_admin"
-ON public.projects
-FOR DELETE
-TO authenticated
-USING (
-  created_by = auth.uid()
-  OR public.is_admin()
-);
-
--- ==============================================================================
--- 4. POLITIQUES RLS SUR STORAGE (project-files)
--- ==============================================================================
-
-DROP POLICY IF EXISTS "project_files_select_members" ON storage.objects;
-CREATE POLICY "project_files_select_members"
-ON storage.objects
-FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'project-files'
-  AND (
-    public.is_admin()
-    OR (storage.foldername(name))[1] = '00000000-0000-0000-0000-000000000001'
-    OR public.is_project_member(
-      NULLIF((storage.foldername(name))[1], '')::uuid
-    )
-  )
-);
-
-DROP POLICY IF EXISTS "project_files_insert_members" ON storage.objects;
-CREATE POLICY "project_files_insert_members"
-ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'project-files'
-  AND (
-    public.is_admin()
-    OR (storage.foldername(name))[1] = '00000000-0000-0000-0000-000000000001'
-    OR public.is_project_member(
-      NULLIF((storage.foldername(name))[1], '')::uuid
-    )
-  )
-);
-
--- ==============================================================================
--- 5. FONCTION D'ADMINISTRATION ROBUSTE & UNIFIÉE
--- ==============================================================================
-
+-- 3. FONCTION D'ADMINISTRATION ROBUSTE & UNIFIÉE
 CREATE OR REPLACE FUNCTION public.is_admin(user_uid UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -161,10 +42,162 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO authenticated, anon;
 
--- ==============================================================================
--- 6. POLITIQUES RLS SUR PROFILES (MODIFICATION ET SUPPRESSION)
--- ==============================================================================
+-- 4. MISE À JOUR DES PROFILS DIRECTION & SAMIRA EN TANT QU'ADMINISTRATEUR
+UPDATE public.profiles
+SET role = 'admin'
+WHERE lower(email) LIKE '%direction%' OR lower(email) LIKE '%samira%';
 
+-- 5. FONCTION DE VÉRIFICATION D'APPARTENANCE PROJET
+CREATE OR REPLACE FUNCTION public.is_project_member(
+  p_id UUID,
+  user_uid UUID DEFAULT auth.uid()
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT (
+    p_id IS NULL
+    OR p_id = '00000000-0000-0000-0000-000000000001'
+    OR EXISTS (
+      SELECT 1
+      FROM public.projects p
+      WHERE p.id = p_id
+        AND (
+          p.created_by = user_uid
+          OR EXISTS (
+            SELECT 1
+            FROM public.project_members pm
+            WHERE pm.project_id = p_id
+              AND pm.user_id = user_uid
+          )
+        )
+    )
+  );
+$$;
+
+-- 6. POLITIQUES RLS SUR LA TABLE FILES (TÉLÉVERSEMENT & CONSULTATION)
+DROP POLICY IF EXISTS "files_select" ON public.files;
+CREATE POLICY "files_select"
+ON public.files
+FOR SELECT
+TO authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "files_insert" ON public.files;
+CREATE POLICY "files_insert"
+ON public.files
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  uploaded_by = auth.uid()
+  OR auth.uid() IS NOT NULL
+);
+
+DROP POLICY IF EXISTS "files_update" ON public.files;
+CREATE POLICY "files_update"
+ON public.files
+FOR UPDATE
+TO authenticated
+USING (
+  uploaded_by = auth.uid()
+  OR public.is_admin()
+)
+WITH CHECK (
+  uploaded_by = auth.uid()
+  OR public.is_admin()
+);
+
+DROP POLICY IF EXISTS "files_delete" ON public.files;
+CREATE POLICY "files_delete"
+ON public.files
+FOR DELETE
+TO authenticated
+USING (
+  uploaded_by = auth.uid()
+  OR public.is_admin()
+);
+
+-- 7. POLITIQUES RLS SUR LA TABLE FOLDERS
+DROP POLICY IF EXISTS "folders_member_select" ON public.folders;
+DROP POLICY IF EXISTS "folders_select" ON public.folders;
+CREATE POLICY "folders_select"
+ON public.folders
+FOR SELECT
+TO authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "folders_member_insert" ON public.folders;
+DROP POLICY IF EXISTS "folders_insert" ON public.folders;
+CREATE POLICY "folders_insert"
+ON public.folders
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  created_by = auth.uid()
+  OR auth.uid() IS NOT NULL
+);
+
+DROP POLICY IF EXISTS "folders_member_update" ON public.folders;
+DROP POLICY IF EXISTS "folders_update" ON public.folders;
+CREATE POLICY "folders_update"
+ON public.folders
+FOR UPDATE
+TO authenticated
+USING (
+  created_by = auth.uid()
+  OR public.is_admin()
+)
+WITH CHECK (
+  created_by = auth.uid()
+  OR public.is_admin()
+);
+
+DROP POLICY IF EXISTS "folders_member_delete" ON public.folders;
+DROP POLICY IF EXISTS "folders_delete" ON public.folders;
+CREATE POLICY "folders_delete"
+ON public.folders
+FOR DELETE
+TO authenticated
+USING (
+  created_by = auth.uid()
+  OR public.is_admin()
+);
+
+-- 8. POLITIQUES RLS SUR STORAGE (bucket project-files)
+DROP POLICY IF EXISTS "project_files_select_members" ON storage.objects;
+DROP POLICY IF EXISTS "project_files_select" ON storage.objects;
+CREATE POLICY "project_files_select"
+ON storage.objects
+FOR SELECT
+TO authenticated
+USING (bucket_id = 'project-files');
+
+DROP POLICY IF EXISTS "project_files_insert_members" ON storage.objects;
+DROP POLICY IF EXISTS "project_files_insert" ON storage.objects;
+CREATE POLICY "project_files_insert"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'project-files');
+
+DROP POLICY IF EXISTS "project_files_update" ON storage.objects;
+CREATE POLICY "project_files_update"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (bucket_id = 'project-files');
+
+DROP POLICY IF EXISTS "project_files_delete" ON storage.objects;
+CREATE POLICY "project_files_delete"
+ON storage.objects
+FOR DELETE
+TO authenticated
+USING (bucket_id = 'project-files');
+
+-- 9. POLITIQUES RLS SUR PROFILES (MODIFICATION ET SUPPRESSION)
 DROP POLICY IF EXISTS "profiles_select_authenticated" ON public.profiles;
 CREATE POLICY "profiles_select_authenticated"
 ON public.profiles
@@ -175,7 +208,6 @@ USING (true);
 DROP POLICY IF EXISTS "profiles_admin_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_all" ON public.profiles;
-
 CREATE POLICY "profiles_update_all"
 ON public.profiles
 FOR UPDATE
@@ -199,10 +231,7 @@ USING (
   OR public.is_admin()
 );
 
--- ==============================================================================
--- 7. FONCTION SÉCURISÉE DE SUPPRESSION COMPLÈTE DE COMPTE (AUTH + PROFILES + STORAGE)
--- ==============================================================================
-
+-- 10. FONCTION SÉCURISÉE DE SUPPRESSION COMPLÈTE DE COMPTE
 CREATE OR REPLACE FUNCTION public.delete_user_account(target_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -210,16 +239,14 @@ SECURITY DEFINER
 SET search_path = public, auth, storage
 AS $$
 BEGIN
-  -- L'administrateur ou l'utilisateur lui-même peut supprimer le compte
   IF auth.uid() = target_user_id OR public.is_admin() THEN
-    -- 1. Détacher les fichiers éventuels dans storage sans violer storage.protect_delete()
+    -- Détacher les éventuels fichiers sans violer storage.protect_delete()
     BEGIN
       UPDATE storage.objects SET owner = NULL WHERE owner = target_user_id;
     EXCEPTION WHEN OTHERS THEN
       NULL;
     END;
 
-    -- 2. Nettoyer les dépendances directes
     DELETE FROM public.project_members WHERE user_id = target_user_id;
     DELETE FROM public.submission_comments WHERE user_id = target_user_id;
     DELETE FROM public.notifications WHERE user_id = target_user_id;
@@ -232,10 +259,7 @@ BEGIN
     UPDATE public.submissions SET reviewed_by = NULL WHERE reviewed_by = target_user_id;
     UPDATE public.messages SET deleted_by = NULL WHERE deleted_by = target_user_id;
 
-    -- 3. Supprimer le profil public
     DELETE FROM public.profiles WHERE id = target_user_id;
-
-    -- 4. Supprimer le compte auth (ce qui révoque tokens et sessions)
     DELETE FROM auth.users WHERE id = target_user_id;
 
     RETURN TRUE;
@@ -247,10 +271,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.delete_user_account(UUID) TO authenticated;
 
--- ==============================================================================
--- 8. FONCTION SÉCURISÉE DE MISE À JOUR DE PROFIL PAR L'ADMINISTRATEUR
--- ==============================================================================
-
+-- 11. FONCTION SÉCURISÉE DE MISE À JOUR DE PROFIL PAR L'ADMINISTRATEUR
 CREATE OR REPLACE FUNCTION public.admin_update_profile(
   target_user_id UUID,
   p_full_name TEXT DEFAULT NULL,
@@ -282,7 +303,6 @@ BEGIN
   WHERE id = target_user_id
   RETURNING * INTO res;
 
-  -- Synchroniser les métadonnées auth
   UPDATE auth.users
   SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_strip_nulls(
     jsonb_build_object(
@@ -300,10 +320,3 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_update_profile(UUID, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
-
--- ==============================================================================
--- 9. SUPPRESSION / MODIFICATION DIRECTE DE SECOURS DANS LE SQL EDITOR SUPABASE
--- Si vous souhaitez supprimer immédiatement le compte manuellement dans SQL Editor :
--- DELETE FROM auth.users WHERE email = 'adiatounoura@tuwshiuah.com';
--- ==============================================================================
-

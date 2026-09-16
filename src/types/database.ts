@@ -54,7 +54,7 @@ export interface ProjectMember {
 
 export interface Folder {
   id: string;
-  project_id: string;
+  project_id?: string | null;
   name: string;
   parent_id?: string | null;
   created_by: string;
@@ -66,7 +66,7 @@ export interface Folder {
 
 export interface FileItem {
   id: string;
-  project_id: string;
+  project_id?: string | null;
   folder_id?: string | null;
   name: string;
   size_bytes: number;
