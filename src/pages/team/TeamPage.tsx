@@ -703,20 +703,15 @@ export const TeamPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Civilité / Genre */}
+          {/* Genre */}
           <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
-                <Icon name="wc" className="text-brand-orange text-[16px]" />
-                Civilité & Genre <span className="text-brand-orange">*</span>
-              </label>
-              <span className="text-[11px] text-secondary">
-                Génération automatique de l'avatar
-              </span>
-            </div>
+            <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
+              <Icon name="wc" className="text-brand-orange text-[16px]" />
+              Genre
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <label
-                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                   formData.gender === 'female'
                     ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
                     : 'border-surface-container hover:bg-surface-container-low'
@@ -730,14 +725,11 @@ export const TeamPage: React.FC = () => {
                   onChange={() => handleGenderChange('female')}
                   className="accent-brand-orange"
                 />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-primary-container">Femme</span>
-                  <span className="text-[10px] text-secondary">Génère automatiquement un avatar féminin</span>
-                </div>
+                <span className="text-xs font-bold text-primary-container">Femme</span>
               </label>
 
               <label
-                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                   formData.gender === 'male'
                     ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
                     : 'border-surface-container hover:bg-surface-container-low'
@@ -751,10 +743,7 @@ export const TeamPage: React.FC = () => {
                   onChange={() => handleGenderChange('male')}
                   className="accent-brand-orange"
                 />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-primary-container">Homme</span>
-                  <span className="text-[10px] text-secondary">Génère automatiquement un avatar masculin</span>
-                </div>
+                <span className="text-xs font-bold text-primary-container">Homme</span>
               </label>
             </div>
           </div>
@@ -825,12 +814,12 @@ export const TeamPage: React.FC = () => {
                     </span>
                   ) : (
                     <span className="text-[10px] font-medium text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Icon name="auto_awesome" className="text-[11px]" /> Avatar automatique ({formData.gender === 'female' ? 'Femme' : 'Homme'})
+                      <Icon name="face" className="text-[11px]" /> Avatar {formData.gender === 'female' ? 'Femme' : 'Homme'}
                     </span>
                   )}
                 </div>
                 <span className="text-[11px] text-secondary leading-snug">
-                  L'avatar est généré automatiquement selon le prénom et le genre (Femme ou Homme). Vous pouvez également téléverser une photo si vous le souhaitez.
+                  Vous pouvez téléverser une photo personnalisée depuis votre ordinateur si vous le souhaitez.
                 </span>
               </div>
             </div>
