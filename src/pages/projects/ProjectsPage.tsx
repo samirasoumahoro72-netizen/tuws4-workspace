@@ -101,7 +101,7 @@ export const ProjectsPage: React.FC = () => {
               {projects.length} projet{projects.length > 1 ? 's' : ''} au total
             </span>
             <span className="text-secondary text-[11px]">•</span>
-            <span className="text-[11px] font-bold text-on-tertiary-container">Workspace IA</span>
+            <span className="text-[11px] font-bold text-on-tertiary-container">Workspace</span>
           </div>
         </div>
 

@@ -276,7 +276,7 @@ export const dashboardService = {
           id: row.id,
           title: row.name || 'Projet sans titre',
           description: row.description || '',
-          category: 'Workspace IA',
+          category: 'Workspace',
           status: normalizedStatus,
           progress: Number(row.progress) || 0,
           deadline: row.due_date || row.created_at || '',

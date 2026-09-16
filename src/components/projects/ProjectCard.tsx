@@ -44,7 +44,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             <h3 className="font-headline text-base font-bold text-primary-container truncate group-hover:text-on-tertiary-container transition-colors">
               {project.name || project.title}
             </h3>
-            <span className="text-xs text-secondary truncate">{project.category || 'Workspace IA'}</span>
+            <span className="text-xs text-secondary truncate">{project.category || 'Workspace'}</span>
           </div>
         </div>
 
