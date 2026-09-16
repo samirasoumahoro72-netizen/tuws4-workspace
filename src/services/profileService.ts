@@ -293,6 +293,7 @@ export const profileService = {
   },
 
   /**
+  /**
    * [ADMIN] Modification des informations d'un collaborateur
    */
   async updateMember(memberId: string, memberData: Partial<Profile>): Promise<Profile | null> {
@@ -303,34 +304,73 @@ export const profileService = {
     const dbPayload = { ...sanitized };
     delete (dbPayload as any).gender;
 
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .update(dbPayload)
-          .eq('id', memberId)
-          .select()
-          .single();
+    // Supprimer les clés undefined
+    Object.keys(dbPayload).forEach((k) => {
+      if ((dbPayload as any)[k] === undefined) {
+        delete (dbPayload as any)[k];
+      }
+    });
 
-        if (data && !error) {
-          const updated: Profile = {
-            ...data,
-            gender: memberData.gender,
-            role: (data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),
-          };
-          const current = getLocalProfiles();
-          const idx = current.findIndex((p) => p.id === memberId);
-          if (idx !== -1) {
-            current[idx] = updated;
-            saveLocalProfiles(current);
-          }
-          return updated;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(memberId);
+
+    if (isSupabaseConfigured && isUUID) {
+      let updatedFromDb: any = null;
+
+      // 1. Tenter d'abord la fonction RPC sécurisée (SECURITY DEFINER)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('admin_update_profile', {
+          target_user_id: memberId,
+          p_full_name: dbPayload.full_name || null,
+          p_job_title: dbPayload.job_title || null,
+          p_phone: dbPayload.phone || null,
+          p_role: dbPayload.role || null,
+          p_avatar_url: dbPayload.avatar_url || null,
+        });
+
+        if (!rpcError && rpcData) {
+          updatedFromDb = rpcData;
         }
-      } catch (err) {
-        console.warn('[profileService] Erreur updateMember Supabase :', err);
+      } catch (rpcErr) {
+        console.warn('[profileService] RPC admin_update_profile non disponible, repli direct :', rpcErr);
+      }
+
+      // 2. Repli par mise à jour directe sur la table public.profiles
+      if (!updatedFromDb) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .update(dbPayload)
+            .eq('id', memberId)
+            .select()
+            .maybeSingle();
+
+          if (error) {
+            console.warn('[profileService] Erreur update direct Supabase :', error.message);
+          } else if (data) {
+            updatedFromDb = data;
+          }
+        } catch (dbErr) {
+          console.warn('[profileService] Erreur réseau / Supabase lors de updateMember :', dbErr);
+        }
+      }
+
+      if (updatedFromDb) {
+        const updated: Profile = {
+          ...updatedFromDb,
+          gender: memberData.gender,
+          role: (updatedFromDb.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),
+        };
+        const current = getLocalProfiles();
+        const idx = current.findIndex((p) => p.id === memberId);
+        if (idx !== -1) {
+          current[idx] = updated;
+          saveLocalProfiles(current);
+        }
+        return updated;
       }
     }
 
+    // Repli local si compte hors Supabase (ou si RLS en attente d'application SQL)
     const current = getLocalProfiles();
     const idx = current.findIndex((p) => p.id === memberId);
     if (idx !== -1) {
@@ -342,25 +382,47 @@ export const profileService = {
     return null;
   },
 
-  /**
-   * [ADMIN] Suppression d'un collaborateur
-   */
   async deleteMember(memberId: string): Promise<boolean> {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', memberId);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(memberId);
 
-        if (error) {
-          console.warn('[profileService] Erreur deleteMember Supabase :', error);
+    if (isSupabaseConfigured && isUUID) {
+      let dbDeleteSuccess = false;
+
+      // 1. Tenter d'abord la suppression complète via RPC (auth.users + public.profiles + storage)
+      try {
+        const { error: rpcError } = await supabase.rpc('delete_user_account', {
+          target_user_id: memberId,
+        });
+
+        if (!rpcError) {
+          dbDeleteSuccess = true;
+        } else {
+          console.warn('[profileService] RPC delete_user_account échoué, repli direct profiles :', rpcError.message);
         }
       } catch (err) {
-        console.warn('[profileService] Erreur suppression Supabase :', err);
+        console.warn('[profileService] Erreur appel RPC delete_user_account :', err);
+      }
+
+      // 2. Repli par suppression directe dans la table profiles
+      if (!dbDeleteSuccess) {
+        try {
+          const { error: delError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', memberId);
+
+          if (delError) {
+            console.warn('[profileService] Repli suppression direct profiles échoué :', delError.message);
+          } else {
+            dbDeleteSuccess = true;
+          }
+        } catch (err) {
+          console.warn('[profileService] Exception lors de delete profiles :', err);
+        }
       }
     }
 
+    // Mise à jour immédiate du cache local
     const current = getLocalProfiles();
     const filtered = current.filter((p) => p.id !== memberId);
     saveLocalProfiles(filtered);

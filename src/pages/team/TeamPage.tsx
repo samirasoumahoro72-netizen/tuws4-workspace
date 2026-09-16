@@ -33,14 +33,14 @@ const initialFormData: MemberFormData = {
   job_title: '',
   email: '',
   password: '',
-  phone: '+33 6 ',
+  phone: '+225  ',
   role: 'employee',
   gender: 'female',
   avatar_url: generateAvatarByGender('', 'female'),
 };
 
 export const TeamPage: React.FC = () => {
-  const { user, profile: currentProfile, isAdmin } = useAuth();
+  const { user, profile: currentProfile, isAdmin, signOut } = useAuth();
   const { showToast } = useToast();
 
   const [members, setMembers] = useState<Profile[]>([]);
@@ -78,7 +78,33 @@ export const TeamPage: React.FC = () => {
     reader.onload = (event) => {
       const result = event.target?.result as string;
       if (result) {
-        setFormData((prev) => ({ ...prev, avatar_url: result }));
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 400;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.85);
+            setFormData((prev) => ({ ...prev, avatar_url: compressed }));
+          } else {
+            setFormData((prev) => ({ ...prev, avatar_url: result }));
+          }
+        };
+        img.src = result;
         showToast('Photo de profil sélectionnée', 'check_circle', 'success');
       }
     };
@@ -267,24 +293,26 @@ export const TeamPage: React.FC = () => {
     }
   };
 
-  // Confirmer la suppression (Admin uniquement)
+  // Confirmer la suppression
   const handleConfirmDelete = async () => {
-    if (!isAdmin || !memberToDelete) return;
+    if (!memberToDelete) return;
 
-    // Protection : empêcher l'administrateur connecté de se supprimer lui-même
-    if (memberToDelete.id === user?.id || memberToDelete.id === currentProfile?.id) {
-      showToast('Vous ne pouvez pas supprimer votre propre compte administrateur', 'warning', 'warning');
-      setIsDeleteModalOpen(false);
-      return;
-    }
+    const isSelf = memberToDelete.id === user?.id || memberToDelete.id === currentProfile?.id;
 
     setSubmitting(true);
     try {
       await profileService.deleteMember(memberToDelete.id);
       setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
-      showToast(`Collaborateur ${memberToDelete.full_name} supprimé du workspace`, 'delete', 'info');
       setIsDeleteModalOpen(false);
       setMemberToDelete(null);
+
+      if (isSelf) {
+        showToast('Votre compte a été supprimé. Déconnexion...', 'check_circle', 'info');
+        await signOut();
+        window.location.href = '/login';
+      } else {
+        showToast(`Collaborateur ${memberToDelete.full_name} supprimé du workspace`, 'delete', 'info');
+      }
     } catch (err: any) {
       showToast(err?.message || 'Erreur lors de la suppression', 'error', 'error');
     } finally {
@@ -306,7 +334,7 @@ export const TeamPage: React.FC = () => {
             </span>
           </div>
           <p className="text-sm text-secondary mt-0.5">
-            Annuaire des talents et collaborateurs de l'agence d'IA et numérique.
+            Annuaire des talents et collaborateurs.
           </p>
         </div>
 
@@ -440,13 +468,8 @@ export const TeamPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenDeleteModal(profile)}
-                        disabled={isSelf}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                          isSelf
-                            ? 'text-surface-container cursor-not-allowed'
-                            : 'text-secondary hover:text-error hover:bg-error-container/20'
-                        }`}
-                        title={isSelf ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer ce collaborateur'}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-error hover:bg-error-container/20 transition-colors"
+                        title={isSelf ? 'Supprimer votre compte' : 'Supprimer ce collaborateur'}
                       >
                         <Icon name="delete" className="text-[16px]" />
                       </button>
@@ -524,369 +547,377 @@ export const TeamPage: React.FC = () => {
         <>
           <Modal
             isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        title={editingMember ? 'Modifier le Collaborateur' : 'Nouveau Collaborateur'}
-        subtitle={
-          editingMember
-            ? `Mise à jour des informations de ${editingMember.full_name}`
-            : "Inscrire un nouveau membre d'équipe dans TUWSHIUAH Workspace"
-        }
-        maxWidth="lg"
-      >
-        <form onSubmit={handleSubmitForm} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Nom complet */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-primary-container">
-                Nom complet <span className="text-brand-orange">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.full_name}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  setFormData((prev) => {
-                    const isCustomUpload = prev.avatar_url?.startsWith('data:image');
-                    return {
-                      ...prev,
-                      full_name: newName,
-                      avatar_url: isCustomUpload ? prev.avatar_url : generateAvatarByGender(newName, prev.gender),
-                    };
-                  });
-                }}
-                placeholder="Ex: Sophie Martin"
-                className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
-              />
-            </div>
-
-            {/* Poste / Titre */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-primary-container">
-                Poste / Titre <span className="text-brand-orange">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.job_title}
-                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                placeholder="Ex: Data Engineer & MLOps"
-                className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
-              />
-            </div>
-
-            {/* Email professionnel */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-primary-container">
-                Adresse e-mail professionnelle <span className="text-brand-orange">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="nom@tuwshiuah.com"
-                className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
-              />
-            </div>
-
-            {/* Téléphone */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-primary-container">
-                Numéro de téléphone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+33 6 12 34 56 78"
-                className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
-              />
-            </div>
-
-            {/* Mot de passe de connexion initial (Création de compte par l'Admin) */}
-            {!editingMember && (
-              <div className="flex flex-col gap-1.5 sm:col-span-2 p-3.5 rounded-xl bg-surface-container-low/60 border border-surface-container">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
-                    <Icon name="lock" className="text-brand-orange text-[15px]" />
-                    Mot de passe de connexion initial <span className="text-brand-orange">*</span>
+            onClose={() => setIsFormModalOpen(false)}
+            title={editingMember ? 'Modifier le Collaborateur' : 'Nouveau Collaborateur'}
+            subtitle={
+              editingMember
+                ? `Mise à jour des informations de ${editingMember.full_name}`
+                : "Inscrire un nouveau membre d'équipe dans TUWSHIUAH Workspace"
+            }
+            maxWidth="lg"
+          >
+            <form onSubmit={handleSubmitForm} className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Nom complet */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-primary-container">
+                    Nom complet <span className="text-brand-orange">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleGeneratePassword}
-                    className="text-[11px] text-brand-orange font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Icon name="auto_awesome" className="text-[14px]" />
-                    Générer un mot de passe
-                  </button>
-                </div>
-                <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    required={!editingMember}
-                    minLength={6}
-                    value={formData.password || ''}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Minimum 6 caractères (ex: TUWS-2026!)"
-                    className="w-full h-10 pl-3 pr-10 rounded-xl bg-white border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange transition-all font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-primary-container cursor-pointer"
-                    title={showPassword ? 'Masquer' : 'Afficher'}
-                  >
-                    <Icon name={showPassword ? 'visibility_off' : 'visibility'} className="text-[16px]" />
-                  </button>
-                </div>
-                <p className="text-[11px] text-secondary leading-tight mt-0.5">
-                  🔐 Ce mot de passe permettra à l'employé de se connecter immédiatement à son espace personnel.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Rôle sur la plateforme */}
-          <div className="flex flex-col gap-2 pt-1 border-t border-surface-container">
-            <label className="text-xs font-bold text-primary-container">
-              Rôle et permissions d'accès <span className="text-brand-orange">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`p-3 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
-                  formData.role === 'employee'
-                    ? 'border-brand-orange bg-brand-orange/5'
-                    : 'border-surface-container hover:bg-surface-container-low'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="member_role"
-                  value="employee"
-                  checked={formData.role === 'employee'}
-                  onChange={() => setFormData({ ...formData, role: 'employee' })}
-                  className="mt-0.5 accent-brand-orange"
-                />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-primary-container">Collaborateur</span>
-                  <span className="text-[10px] text-secondary">
-                    Consultation, travail d'équipe et soumission de livrables.
-                  </span>
-                </div>
-              </label>
-
-              <label
-                className={`p-3 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
-                  formData.role === 'admin'
-                    ? 'border-brand-orange bg-brand-orange/5'
-                    : 'border-surface-container hover:bg-surface-container-low'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="member_role"
-                  value="admin"
-                  checked={formData.role === 'admin'}
-                  onChange={() => setFormData({ ...formData, role: 'admin' })}
-                  className="mt-0.5 accent-brand-orange"
-                />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-brand-orange flex items-center gap-1">
-                    <Icon name="crown" className="text-[12px]" /> Direction (Admin)
-                  </span>
-                  <span className="text-[10px] text-secondary">
-                    Contrôle total, arbitrage, gestion d'équipe et validation.
-                  </span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Genre */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
-            <label className="text-xs font-bold text-primary-container">
-              Genre
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
-                  formData.gender === 'female'
-                    ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
-                    : 'border-surface-container hover:bg-surface-container-low'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="member_gender"
-                  value="female"
-                  checked={formData.gender === 'female'}
-                  onChange={() => handleGenderChange('female')}
-                  className="accent-brand-orange"
-                />
-                <span className="text-xs font-bold text-primary-container">Femme</span>
-              </label>
-
-              <label
-                className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
-                  formData.gender === 'male'
-                    ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
-                    : 'border-surface-container hover:bg-surface-container-low'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="member_gender"
-                  value="male"
-                  checked={formData.gender === 'male'}
-                  onChange={() => handleGenderChange('male')}
-                  className="accent-brand-orange"
-                />
-                <span className="text-xs font-bold text-primary-container">Homme</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Photo de profil (Aperçu et upload optionnel) */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-primary-container">
-                Photo du collaborateur
-              </label>
-              {formData.avatar_url && formData.avatar_url.startsWith('data:image') && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1"
-                >
-                  <Icon name="refresh" className="text-[13px]" />
-                  Revenir à l'avatar automatique
-                </button>
-              )}
-            </div>
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/png, image/jpeg, image/webp, image/gif"
-              className="hidden"
-            />
-
-            <div className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-low/70 border border-surface-container">
-              {/* Aperçu de l'avatar */}
-              <div className="relative shrink-0">
-                <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center overflow-hidden ring-2 ring-surface-container shadow-xs">
-                  <img
-                    src={formData.avatar_url || generateAvatarByGender(formData.full_name, formData.gender)}
-                    alt="Photo collaborateur"
-                    className="w-full h-full object-cover"
+                    type="text"
+                    required
+                    value={formData.full_name}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setFormData((prev) => {
+                        const isCustomUpload = prev.avatar_url?.startsWith('data:image');
+                        return {
+                          ...prev,
+                          full_name: newName,
+                          avatar_url: isCustomUpload ? prev.avatar_url : generateAvatarByGender(newName, prev.gender),
+                        };
+                      });
+                    }}
+                    placeholder="Ex: Sophie Martin"
+                    className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-orange text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 transition-opacity"
-                  title="Importer une photo depuis vos fichiers"
-                >
-                  <Icon name="add" className="text-[12px]" />
-                </button>
+
+                {/* Poste / Titre */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-primary-container">
+                    Poste / Titre <span className="text-brand-orange">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.job_title}
+                    onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+                    placeholder="Ex: Data Engineer & MLOps"
+                    className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Email professionnel */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-primary-container">
+                    Adresse e-mail professionnelle <span className="text-brand-orange">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="nom@tuwshiuah.com"
+                    className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Téléphone */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-primary-container">
+                    Numéro de téléphone
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+33 6 12 34 56 78"
+                    className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Mot de passe de connexion initial (Création de compte par l'Admin) */}
+                {!editingMember && (
+                  <div className="flex flex-col gap-1.5 sm:col-span-2 p-3.5 rounded-xl bg-surface-container-low/60 border border-surface-container">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
+                        <Icon name="lock" className="text-brand-orange text-[15px]" />
+                        Mot de passe de connexion initial <span className="text-brand-orange">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleGeneratePassword}
+                        className="text-[11px] text-brand-orange font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Icon name="auto_awesome" className="text-[14px]" />
+                        Générer un mot de passe
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required={!editingMember}
+                        minLength={6}
+                        value={formData.password || ''}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Minimum 6 caractères (ex: TUWS-2026!)"
+                        className="w-full h-10 pl-3 pr-10 rounded-xl bg-white border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange transition-all font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-primary-container cursor-pointer"
+                        title={showPassword ? 'Masquer' : 'Afficher'}
+                      >
+                        <Icon name={showPassword ? 'visibility_off' : 'visibility'} className="text-[16px]" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-secondary leading-tight mt-0.5">
+                      🔐 Ce mot de passe permettra à l'employé de se connecter immédiatement à son espace personnel.
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Bouton d'ajout et indications */}
-              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    icon="add"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="shadow-xs"
+              {/* Rôle sur la plateforme */}
+              <div className="flex flex-col gap-2 pt-1 border-t border-surface-container">
+                <label className="text-xs font-bold text-primary-container">
+                  Rôle et permissions d'accès <span className="text-brand-orange">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label
+                    className={`p-3 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${formData.role === 'employee'
+                      ? 'border-brand-orange bg-brand-orange/5'
+                      : 'border-surface-container hover:bg-surface-container-low'
+                      }`}
                   >
-                    {formData.avatar_url?.startsWith('data:image') ? 'Changer la photo' : 'Importer une photo depuis l\'ordinateur'}
-                  </Button>
-                  {formData.avatar_url?.startsWith('data:image') && (
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Icon name="check_circle" className="text-[12px]" /> Photo personnalisée active
-                    </span>
+                    <input
+                      type="radio"
+                      name="member_role"
+                      value="employee"
+                      checked={formData.role === 'employee'}
+                      onChange={() => setFormData({ ...formData, role: 'employee' })}
+                      className="mt-0.5 accent-brand-orange"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-primary-container">Collaborateur</span>
+                      <span className="text-[10px] text-secondary">
+                        Consultation, travail d'équipe et soumission de livrables.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`p-3 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${formData.role === 'admin'
+                      ? 'border-brand-orange bg-brand-orange/5'
+                      : 'border-surface-container hover:bg-surface-container-low'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="member_role"
+                      value="admin"
+                      checked={formData.role === 'admin'}
+                      onChange={() => setFormData({ ...formData, role: 'admin' })}
+                      className="mt-0.5 accent-brand-orange"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-brand-orange flex items-center gap-1">
+                        <Icon name="crown" className="text-[12px]" /> Direction (Admin)
+                      </span>
+                      <span className="text-[10px] text-secondary">
+                        Contrôle total, arbitrage, gestion d'équipe et validation.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Genre */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
+                <label className="text-xs font-bold text-primary-container">
+                  Genre
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${formData.gender === 'female'
+                      ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
+                      : 'border-surface-container hover:bg-surface-container-low'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="member_gender"
+                      value="female"
+                      checked={formData.gender === 'female'}
+                      onChange={() => handleGenderChange('female')}
+                      className="accent-brand-orange"
+                    />
+                    <span className="text-xs font-bold text-primary-container">Femme</span>
+                  </label>
+
+                  <label
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${formData.gender === 'male'
+                      ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
+                      : 'border-surface-container hover:bg-surface-container-low'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="member_gender"
+                      value="male"
+                      checked={formData.gender === 'male'}
+                      onChange={() => handleGenderChange('male')}
+                      className="accent-brand-orange"
+                    />
+                    <span className="text-xs font-bold text-primary-container">Homme</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Photo de profil (Aperçu et upload optionnel) */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-primary-container">
+                    Photo du collaborateur
+                  </label>
+                  {formData.avatar_url && formData.avatar_url.startsWith('data:image') && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1"
+                    >
+                      <Icon name="refresh" className="text-[13px]" />
+                      Revenir à l'avatar automatique
+                    </button>
                   )}
                 </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  className="hidden"
+                />
+
+                <div className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-low/70 border border-surface-container">
+                  {/* Aperçu de l'avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center overflow-hidden ring-2 ring-surface-container shadow-xs">
+                      <img
+                        src={formData.avatar_url || generateAvatarByGender(formData.full_name, formData.gender)}
+                        alt="Photo collaborateur"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-orange text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 transition-opacity"
+                      title="Importer une photo depuis vos fichiers"
+                    >
+                      <Icon name="add" className="text-[12px]" />
+                    </button>
+                  </div>
+
+                  {/* Bouton d'ajout et indications */}
+                  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon="add"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="shadow-xs"
+                      >
+                        {formData.avatar_url?.startsWith('data:image') ? 'Changer la photo' : 'Importer une photo depuis l\'ordinateur'}
+                      </Button>
+                      {formData.avatar_url?.startsWith('data:image') && (
+                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Icon name="check_circle" className="text-[12px]" /> Photo personnalisée active
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Boutons d'action */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface-container">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFormModalOpen(false)}
+                  disabled={submitting}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  variant="orange"
+                  size="sm"
+                  isLoading={submitting}
+                  disabled={submitting}
+                  icon={editingMember ? 'save' : 'person_add'}
+                >
+                  {editingMember ? 'Mettre à jour' : 'Ajouter le collaborateur'}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+
+          {/* Modale de Confirmation de Suppression */}
+          <Modal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            title={
+              memberToDelete?.id === user?.id || memberToDelete?.id === currentProfile?.id
+                ? 'Supprimer votre compte ?'
+                : 'Retirer ce collaborateur ?'
+            }
+            maxWidth="sm"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-error-container/20 border border-error/20 text-error">
+                <Icon name="warning" className="text-xl shrink-0 mt-0.5" />
+                <div className="flex flex-col text-xs leading-relaxed">
+                  <span className="font-bold">Action irréversible</span>
+                  <p className="text-on-surface-variant mt-0.5">
+                    {memberToDelete?.id === user?.id || memberToDelete?.id === currentProfile?.id ? (
+                      <>
+                        Vous êtes sur le point de supprimer définitivement <strong className="text-on-surface font-bold">votre propre compte</strong> ({memberToDelete?.full_name}). Vous serez automatiquement déconnecté de TUWSHIUAH Workspace.
+                      </>
+                    ) : (
+                      <>
+                        Êtes-vous sûr de vouloir retirer définitivement{' '}
+                        <strong className="text-on-surface font-bold">
+                          {memberToDelete?.full_name}
+                        </strong>{' '}
+                        {memberToDelete?.role === 'admin' ? '(Direction / Administrateur)' : ''} de l'équipe TUWSHIUAH Workspace ?
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={submitting}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  icon="delete"
+                  isLoading={submitting}
+                  disabled={submitting}
+                  onClick={handleConfirmDelete}
+                >
+                  Supprimer définitivement
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Boutons d'action */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface-container">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsFormModalOpen(false)}
-              disabled={submitting}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              variant="orange"
-              size="sm"
-              isLoading={submitting}
-              disabled={submitting}
-              icon={editingMember ? 'save' : 'person_add'}
-            >
-              {editingMember ? 'Mettre à jour' : 'Ajouter le collaborateur'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modale de Confirmation de Suppression */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Retirer ce collaborateur ?"
-        maxWidth="sm"
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-error-container/20 border border-error/20 text-error">
-            <Icon name="warning" className="text-xl shrink-0 mt-0.5" />
-            <div className="flex flex-col text-xs leading-relaxed">
-              <span className="font-bold">Action irréversible</span>
-              <p className="text-on-surface-variant mt-0.5">
-                Êtes-vous sûr de vouloir retirer définitivement{' '}
-                <strong className="text-on-surface font-bold">
-                  {memberToDelete?.full_name}
-                </strong>{' '}
-                de l'équipe TUWSHIUAH Workspace ?
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsDeleteModalOpen(false)}
-              disabled={submitting}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              icon="delete"
-              isLoading={submitting}
-              disabled={submitting}
-              onClick={handleConfirmDelete}
-            >
-              Supprimer définitivement
-            </Button>
-          </div>
-        </div>
-      </Modal>
+          </Modal>
         </>
       )}
 

@@ -230,9 +230,18 @@ SET search_path = public
 AS $$
   SELECT EXISTS (
     SELECT 1
-    FROM public.project_members pm
-    WHERE pm.project_id = p_id
-      AND pm.user_id = user_uid
+    FROM public.projects p
+    WHERE p.id = p_id
+      AND (
+        p.id = '00000000-0000-0000-0000-000000000001'
+        OR p.created_by = user_uid
+        OR EXISTS (
+          SELECT 1
+          FROM public.project_members pm
+          WHERE pm.project_id = p_id
+            AND pm.user_id = user_uid
+        )
+      )
   );
 $$;
 
@@ -535,10 +544,28 @@ ON public.projects
 FOR SELECT
 TO authenticated
 USING (
-  public.is_admin()
+  id = '00000000-0000-0000-0000-000000000001'
+  OR public.is_admin()
   OR public.is_project_member(id)
   OR created_by = auth.uid()
 );
+
+CREATE POLICY "projects_insert_authenticated"
+ON public.projects
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  created_by = auth.uid()
+  OR public.is_admin()
+  OR id = '00000000-0000-0000-0000-000000000001'
+);
+
+CREATE POLICY "projects_creator_update"
+ON public.projects
+FOR UPDATE
+TO authenticated
+USING (created_by = auth.uid() OR public.is_admin())
+WITH CHECK (created_by = auth.uid() OR public.is_admin());
 
 CREATE POLICY "projects_admin_all"
 ON public.projects

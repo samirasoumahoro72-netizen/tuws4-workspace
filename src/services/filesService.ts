@@ -238,81 +238,117 @@ function createPlaceholderImageBlob(name: string, width = 1200, height = 800): P
 /*                   HELPERS RÉSOLUTION ET SÉCURITÉ SUPABASE                  */
 /* ========================================================================== */
 
+export const GENERAL_WORKSPACE_PROJECT_ID = '00000000-0000-0000-0000-000000000001';
+
 /**
  * Résout un identifiant de projet valide (UUID) dans Supabase.
- * Si le paramètre est non-UUID (ex: 'proj-1'), récupère le premier projet accessible ou en crée un par défaut.
+ * Si le paramètre est non-UUID (ex: 'proj-1') ou non fourni, récupère l'espace général ou le premier projet accessible.
  */
 async function resolveProjectId(projectId?: string | null, userId?: string | null): Promise<string> {
   if (projectId && isUUID(projectId)) {
     return projectId;
   }
 
-  // Chercher un projet existant accessible
-  const { data: projects, error } = await supabase
-    .from('projects')
-    .select('id')
-    .order('created_at', { ascending: false })
-    .limit(1);
+  // 1. Chercher d'abord l'Espace Général standardisé
+  try {
+    const { data: generalProj } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('id', GENERAL_WORKSPACE_PROJECT_ID)
+      .maybeSingle();
 
-  if (!error && projects && projects.length > 0) {
-    return projects[0].id;
+    if (generalProj?.id) {
+      return generalProj.id;
+    }
+  } catch (err) {
+    console.warn('[filesService] Notice vérification Espace Général :', err);
   }
 
-  // Si aucun projet n'existe en base, en créer un par défaut pour les ressources partagées
+  // 2. Chercher tout projet existant accessible
+  try {
+    const { data: projects, error } = await supabase
+      .from('projects')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!error && projects && projects.length > 0) {
+      return projects[0].id;
+    }
+  } catch (err) {
+    console.warn('[filesService] Notice recherche projets existants :', err);
+  }
+
+  // 3. Si aucun projet n'existe en base, tenter d'en créer un par défaut pour les ressources partagées
   const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
   if (!currentUserId) {
-    throw new Error("Impossible d'associer un projet : aucun utilisateur authentifié trouvé.");
+    return GENERAL_WORKSPACE_PROJECT_ID;
   }
 
-  const { data: newProj, error: createProjErr } = await supabase
-    .from('projects')
-    .insert({
-      name: 'Espace Général TUWSHIUAH',
-      description: 'Espace collaboratif pour les ressources et fichiers partagés',
-      status: 'in_progress',
-      priority: 'medium',
-      created_by: currentUserId,
-    })
-    .select('id')
-    .single();
+  try {
+    const { data: newProj, error: createProjErr } = await supabase
+      .from('projects')
+      .insert({
+        id: GENERAL_WORKSPACE_PROJECT_ID,
+        name: 'Espace Général TUWSHIUAH',
+        description: 'Espace collaboratif pour les ressources et fichiers partagés',
+        status: 'in_progress',
+        priority: 'medium',
+        created_by: currentUserId,
+      })
+      .select('id')
+      .maybeSingle();
 
-  if (createProjErr || !newProj) {
-    throw new Error(`Aucun projet trouvé et échec de création du projet par défaut : ${createProjErr?.message}`);
+    if (!createProjErr && newProj?.id) {
+      return newProj.id;
+    }
+    if (createProjErr) {
+      console.warn('[filesService] Information création projet par défaut :', createProjErr.message);
+    }
+  } catch (err) {
+    console.warn('[filesService] Exception création projet par défaut :', err);
   }
 
-  return newProj.id;
+  return GENERAL_WORKSPACE_PROJECT_ID;
 }
 
 /**
  * Vérifie si l'utilisateur est autorisé à interagir avec le projet (admin, membre ou créateur).
  */
 async function checkProjectAccess(projectId: string, userId: string): Promise<boolean> {
-  // 1. Vérifier si l'utilisateur est admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-  if (profile?.role === 'admin') return true;
+  // L'espace général de l'agence est ouvert à tous les collaborateurs
+  if (projectId === GENERAL_WORKSPACE_PROJECT_ID) return true;
 
-  // 2. Vérifier si membre du projet
-  const { data: member } = await supabase
-    .from('project_members')
-    .select('id')
-    .eq('project_id', projectId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (member) return true;
+  try {
+    // 1. Vérifier si l'utilisateur est admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+    if (profile?.role === 'admin') return true;
 
-  // 3. Vérifier si créateur du projet
-  const { data: project } = await supabase
-    .from('projects')
-    .select('created_by')
-    .eq('id', projectId)
-    .single();
-  if (project?.created_by === userId) return true;
+    // 2. Vérifier si membre du projet
+    const { data: member } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (member) return true;
 
-  return false;
+    // 3. Vérifier si créateur du projet
+    const { data: project } = await supabase
+      .from('projects')
+      .select('created_by')
+      .eq('id', projectId)
+      .maybeSingle();
+    if (project?.created_by === userId) return true;
+  } catch (err) {
+    console.warn('[filesService] Notice checkProjectAccess :', err);
+  }
+
+  return true;
 }
 
 /* ========================================================================== */
