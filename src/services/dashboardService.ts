@@ -478,7 +478,7 @@ export const dashboardService = {
         pendingSubmissions,
         activeProjects,
         employees,
-        activities,
+        activities: activities.length > 0 ? activities : await activitiesService.getActivities(userId, _isAdmin, 10),
       };
     } catch (globalError) {
       console.warn('[dashboardService] Erreur globale lors de la récupération des données Supabase :', globalError);
@@ -487,7 +487,7 @@ export const dashboardService = {
         pendingSubmissions: [],
         activeProjects: [],
         employees: [],
-        activities: [],
+        activities: await activitiesService.getActivities(userId, _isAdmin, 10),
       };
     }
   },

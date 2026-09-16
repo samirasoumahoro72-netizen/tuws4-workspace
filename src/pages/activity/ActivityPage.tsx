@@ -140,20 +140,27 @@ export const ActivityPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>('ALL');
 
-  const fetchActivities = useCallback(async () => {
-    setLoading(true);
+  const fetchActivities = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await activitiesService.getActivities(user?.id, isAdmin, 60);
       setActivities(data);
     } catch (err) {
       console.warn('[ActivityPage] Erreur chargement activités :', err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [user?.id, isAdmin]);
 
   useEffect(() => {
-    fetchActivities();
+    fetchActivities(true);
+
+    const handleNewActivity = () => {
+      fetchActivities(false);
+    };
+
+    window.addEventListener('tuws:activity_logged', handleNewActivity);
+    return () => window.removeEventListener('tuws:activity_logged', handleNewActivity);
   }, [fetchActivities]);
 
   // Filtrage éditorial des activités
@@ -162,10 +169,17 @@ export const ActivityPage: React.FC = () => {
 
     return activities.filter((item) => {
       const actLower = (item.action || '').toLowerCase();
+      const descLower = (item.description || '').toLowerCase();
+      const entityLower = (item.entity_type || '').toLowerCase();
       const type = item.action_type;
 
       if (activeFilter === 'PROJECTS') {
-        return type === 'CREATE_PROJECT' || actLower.includes('project');
+        return (
+          type === 'CREATE_PROJECT' ||
+          actLower.includes('project') ||
+          entityLower === 'project' ||
+          descLower.includes('projet')
+        );
       }
       if (activeFilter === 'SUBMISSIONS') {
         return (
@@ -173,14 +187,29 @@ export const ActivityPage: React.FC = () => {
           type === 'APPROVE_WORK' ||
           actLower.includes('submit') ||
           actLower.includes('valid') ||
-          actLower.includes('approv')
+          actLower.includes('approv') ||
+          descLower.includes('livrable') ||
+          entityLower === 'submission'
         );
       }
       if (activeFilter === 'FILES') {
-        return type === 'UPLOAD_FILE' || actLower.includes('file');
+        return (
+          type === 'UPLOAD_FILE' ||
+          actLower.includes('file') ||
+          actLower.includes('upload') ||
+          entityLower === 'file' ||
+          descLower.includes('document') ||
+          descLower.includes('fichier')
+        );
       }
       if (activeFilter === 'TEAM') {
-        return type === 'ASSIGN_MEMBER' || actLower.includes('assign') || actLower.includes('member');
+        return (
+          type === 'ASSIGN_MEMBER' ||
+          actLower.includes('assign') ||
+          actLower.includes('member') ||
+          descLower.includes('collaborateur') ||
+          descLower.includes('équipe')
+        );
       }
       return true;
     });
@@ -209,29 +238,39 @@ export const ActivityPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Filtres éditoriaux discrets */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
-          {(
-            [
-              { key: 'ALL', label: 'Tout' },
-              { key: 'PROJECTS', label: 'Projets' },
-              { key: 'SUBMISSIONS', label: 'Livrables' },
-              { key: 'FILES', label: 'Fichiers' },
-              { key: 'TEAM', label: 'Équipe' },
-            ] as { key: ActivityFilter; label: string }[]
-          ).map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
-                activeFilter === f.key
-                  ? 'bg-primary-container text-on-primary shadow-xs'
-                  : 'bg-surface-container-low text-secondary hover:bg-surface-container hover:text-primary-container'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+        {/* Filtres et bouton rafraîchir */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar shrink-0">
+          <div className="flex items-center gap-1.5">
+            {(
+              [
+                { key: 'ALL', label: 'Tout' },
+                { key: 'PROJECTS', label: 'Projets' },
+                { key: 'SUBMISSIONS', label: 'Livrables' },
+                { key: 'FILES', label: 'Fichiers' },
+                { key: 'TEAM', label: 'Équipe' },
+              ] as { key: ActivityFilter; label: string }[]
+            ).map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  activeFilter === f.key
+                    ? 'bg-primary-container text-on-primary shadow-xs'
+                    : 'bg-surface-container-low text-secondary hover:bg-surface-container hover:text-primary-container'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => fetchActivities(true)}
+            title="Actualiser le flux"
+            className="p-1.5 rounded-full bg-surface-container-low text-secondary hover:bg-surface-container hover:text-primary-container transition-colors"
+          >
+            <Icon name="refresh" className={`text-base ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
