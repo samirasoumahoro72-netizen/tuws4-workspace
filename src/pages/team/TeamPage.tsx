@@ -705,8 +705,7 @@ export const TeamPage: React.FC = () => {
 
           {/* Genre */}
           <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
-            <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
-              <Icon name="wc" className="text-brand-orange text-[16px]" />
+            <label className="text-xs font-bold text-primary-container">
               Genre
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -751,8 +750,7 @@ export const TeamPage: React.FC = () => {
           {/* Photo de profil (Aperçu et upload optionnel) */}
           <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
-                <Icon name="face" className="text-brand-orange text-[16px]" />
+              <label className="text-xs font-bold text-primary-container">
                 Avatar du collaborateur
               </label>
               {formData.avatar_url && formData.avatar_url.startsWith('data:image') && (
@@ -791,7 +789,7 @@ export const TeamPage: React.FC = () => {
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-orange text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 transition-opacity"
                   title="Importer une photo depuis vos fichiers"
                 >
-                  <Icon name="add_a_photo" className="text-[12px]" />
+                  <Icon name="add" className="text-[12px]" />
                 </button>
               </div>
 
@@ -802,7 +800,7 @@ export const TeamPage: React.FC = () => {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    icon="add_photo_alternate"
+                    icon="add"
                     onClick={() => fileInputRef.current?.click()}
                     className="shadow-xs"
                   >
@@ -814,7 +812,7 @@ export const TeamPage: React.FC = () => {
                     </span>
                   ) : (
                     <span className="text-[10px] font-medium text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Icon name="face" className="text-[11px]" /> Avatar {formData.gender === 'female' ? 'Femme' : 'Homme'}
+                      <Icon name="user" className="text-[11px]" /> Avatar {formData.gender === 'female' ? 'Femme' : 'Homme'}
                     </span>
                   )}
                 </div>

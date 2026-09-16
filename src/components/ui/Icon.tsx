@@ -30,15 +30,22 @@ export const Icon: React.FC<IconProps> = ({
     return null;
   }
 
-  let resolvedIcon: IconDefinition;
+  let resolvedIcon: IconDefinition | undefined;
 
   if (typeof target === 'object' && 'icon' in target) {
     resolvedIcon = target as IconDefinition;
   } else if (typeof target === 'string') {
     const key = target.trim().toLowerCase();
-    resolvedIcon = appIcons[key] || appIcons[target] || appIcons['info'];
-  } else {
-    resolvedIcon = appIcons['info'];
+    // Ne jamais afficher l'icône de cercle info (i) dans l'application
+    if (key === 'info' || key === 'help' || key === 'circleinfo' || key === 'circle_info' || key === 'info_outline') {
+      return null;
+    }
+    resolvedIcon = appIcons[key] || appIcons[target];
+  }
+
+  // Si l'icône demandée n'existe pas ou n'est pas définie, ne rien afficher (aucun fallback sur cercle info)
+  if (!resolvedIcon) {
+    return null;
   }
 
   const isSpinning = spin || target === 'progress_activity' || target === 'spinner' || target === 'sync';
