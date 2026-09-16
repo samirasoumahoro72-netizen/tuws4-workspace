@@ -188,9 +188,10 @@ export const profileService = {
     avatar_url?: string;
   }): Promise<Profile> {
     const isFemale = memberData.gender === 'female';
+    const seed = encodeURIComponent(memberData.full_name?.trim() || (isFemale ? 'femme' : 'homme'));
     const defaultAvatar = isFemale
-      ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&auto=format&fit=crop&q=80'
-      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&auto=format&fit=crop&q=80';
+      ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&top=bob,bun,curly,curvy,dreads,longButNotTooLong,miaWallace,straight02,straight01,straightAndStrand&facialHairProbability=0`
+      : `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&top=shortCurly,shortFlat,shortRound,shortWaved,sides,theCaesar,theCaesarAndSidePart`;
 
     const selectedAvatar = memberData.avatar_url?.trim() || defaultAvatar;
 
