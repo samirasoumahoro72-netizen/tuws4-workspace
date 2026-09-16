@@ -812,9 +812,6 @@ export const TeamPage: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] text-secondary leading-snug">
-                  Vous pouvez téléverser une photo personnalisée depuis votre ordinateur si vous le souhaitez.
-                </span>
               </div>
             </div>
           </div>
