@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { activitiesService } from '../../services/activitiesService';
 import { Activity } from '../../types/database';
 import { Icon } from '../../components/ui/Icon';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 type ActivityFilter = 'ALL' | 'PROJECTS' | 'SUBMISSIONS' | 'FILES' | 'TEAM';
 
@@ -160,7 +161,45 @@ export const ActivityPage: React.FC = () => {
     };
 
     window.addEventListener('tuws:activity_logged', handleNewActivity);
-    return () => window.removeEventListener('tuws:activity_logged', handleNewActivity);
+
+    // Écoute Supabase Realtime en direct sur les tables d'activité
+    let channel: any = null;
+    if (isSupabaseConfigured) {
+      try {
+        channel = supabase
+          .channel('realtime_activities_feed')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'activities' },
+            () => fetchActivities(false)
+          )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'projects' },
+            () => fetchActivities(false)
+          )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'submissions' },
+            () => fetchActivities(false)
+          )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'files' },
+            () => fetchActivities(false)
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('[ActivityPage] Erreur souscription temps réel :', err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('tuws:activity_logged', handleNewActivity);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [fetchActivities]);
 
   // Filtrage éditorial des activités
@@ -229,12 +268,13 @@ export const ActivityPage: React.FC = () => {
             <h1 className="font-headline text-2xl font-bold text-primary-container tracking-tight">
               Flux d’Activité
             </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-surface-container text-secondary">
-              Journal d'agence
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-surface-container text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Temps réel
             </span>
           </div>
           <p className="text-xs sm:text-sm text-secondary mt-1 font-medium">
-            Chronologie vivante des décisions, soumissions, fichiers et livrables de TUWSHIUAH.
+            Chronologie vivante des décisions, soumissions, fichiers et livrables réels de TUWSHIUAH.
           </p>
         </div>
 
@@ -278,19 +318,19 @@ export const ActivityPage: React.FC = () => {
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center gap-3 text-secondary">
           <Icon name="spinner" spin className="text-3xl text-brand-orange" />
-          <span className="text-xs font-medium">Synchronisation du journal d'agence...</span>
+          <span className="text-xs font-medium">Connexion au flux d'activité en temps réel...</span>
         </div>
       ) : activities.length === 0 ? (
-        /* 11. ÉTAT VIDE AUTHENTIQUE */
+        /* ÉTAT VIDE AUTHENTIQUE SANS DONNÉES DÉMO */
         <div className="py-20 bg-surface-container-lowest rounded-2xl border border-surface-container flex flex-col items-center justify-center text-center p-8 max-w-md mx-auto">
           <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-secondary mb-3">
             <Icon name="history" className="text-2xl" />
           </div>
           <h2 className="font-headline text-base font-bold text-primary-container mb-1">
-            Rien à signaler pour le moment
+            Aucune activité pour le moment
           </h2>
           <p className="text-xs text-secondary leading-relaxed max-w-sm">
-            Les nouvelles activités de vos projets apparaîtront ici.
+            Les activités réelles de vos projets (création de projet, soumission de livrable, validation, import de fichier) apparaîtront ici automatiquement en temps réel dès leur création.
           </p>
         </div>
       ) : filteredActivities.length === 0 ? (

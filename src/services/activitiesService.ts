@@ -10,227 +10,64 @@ export interface LogActivityParams {
   metadata?: Record<string, unknown> | null;
 }
 
-const ACTIVITIES_STORAGE_KEY = 'tuws_activities_feed_v2';
+const ACTIVITIES_STORAGE_KEY = 'tuws_real_activities_v3';
 
 /**
- * Génère des activités initiales dynamiques et réalistes calées sur les dernières heures/jours
+ * Nettoyage immédiat des anciens enregistrements de démonstration
  */
-const createSeedActivities = (): Activity[] => {
-  const now = Date.now();
-  const m = 60 * 1000;
-  const h = 60 * m;
-  const d = 24 * h;
-
-  return [
-    {
-      id: 'seed-act-1',
-      project_id: 'proj-1',
-      project_name: 'Plateforme NLP Client Alpha',
-      project_title: 'Plateforme NLP Client Alpha',
-      user_id: 'user-sarah',
-      actor_id: 'user-sarah',
-      user: {
-        id: 'user-sarah',
-        full_name: 'Sarah Benali',
-        email: 'sarah.b@tuwshiuah.com',
-        role: 'employee',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah%20Benali&gender=female',
-      },
-      action_type: 'SUBMIT_WORK',
-      action: 'submit_work',
-      entity_type: 'submission',
-      description: 'a soumis le livrable « Module Détection Objets & Parsing v2 »',
-      target_name: 'Module Détection Objets & Parsing v2',
-      created_at: new Date(now - 18 * m).toISOString(),
-    },
-    {
-      id: 'seed-act-2',
-      project_id: 'proj-2',
-      project_name: 'Infrastructure Cloud',
-      project_title: 'Infrastructure Cloud',
-      user_id: 'user-admin',
-      actor_id: 'user-admin',
-      user: {
-        id: 'user-admin',
-        full_name: 'Alexandre Roy',
-        email: 'direction@tuwshiuah.com',
-        role: 'admin',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexandre%20Roy&gender=male',
-      },
-      action_type: 'APPROVE_WORK',
-      action: 'approve_work',
-      entity_type: 'submission',
-      description: 'a validé le livrable « Architecture Microservices Kubernetes »',
-      target_name: 'Architecture Microservices Kubernetes',
-      created_at: new Date(now - 52 * m).toISOString(),
-    },
-    {
-      id: 'seed-act-3',
-      project_id: 'proj-2',
-      project_name: 'Infrastructure Cloud',
-      project_title: 'Infrastructure Cloud',
-      user_id: 'user-lucas',
-      actor_id: 'user-lucas',
-      user: {
-        id: 'user-lucas',
-        full_name: 'Lucas Morel',
-        email: 'lucas.m@tuwshiuah.com',
-        role: 'employee',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas%20Morel&gender=male',
-      },
-      action_type: 'UPLOAD_FILE',
-      action: 'upload_file',
-      entity_type: 'file',
-      description: 'a importé le document « spec_technique_cloud_k8s_v2.pdf »',
-      target_name: 'spec_technique_cloud_k8s_v2.pdf',
-      created_at: new Date(now - 2 * h).toISOString(),
-    },
-    {
-      id: 'seed-act-4',
-      project_id: 'proj-1',
-      project_name: 'Plateforme NLP Client Alpha',
-      project_title: 'Plateforme NLP Client Alpha',
-      user_id: 'user-thomas',
-      actor_id: 'user-thomas',
-      user: {
-        id: 'user-thomas',
-        full_name: 'Thomas Laurent',
-        email: 'thomas.l@tuwshiuah.com',
-        role: 'employee',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas%20Laurent&gender=male',
-      },
-      action_type: 'SUBMIT_WORK',
-      action: 'submit_work',
-      entity_type: 'submission',
-      description: 'a soumis le livrable « Audit Réseau Core & VPN Sécurisé »',
-      target_name: 'Audit Réseau Core & VPN Sécurisé',
-      created_at: new Date(now - 1 * d - 3 * h).toISOString(),
-    },
-    {
-      id: 'seed-act-5',
-      project_id: 'proj-5',
-      project_name: 'Refonte Portail Utilisateur',
-      project_title: 'Refonte Portail Utilisateur',
-      user_id: 'user-admin',
-      actor_id: 'user-admin',
-      user: {
-        id: 'user-admin',
-        full_name: 'Alexandre Roy',
-        email: 'direction@tuwshiuah.com',
-        role: 'admin',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexandre%20Roy&gender=male',
-      },
-      action_type: 'ASSIGN_MEMBER',
-      action: 'assign_member',
-      entity_type: 'project',
-      description: 'a assigné Julie Vasseur au projet « Refonte Portail Utilisateur »',
-      target_name: 'Refonte Portail Utilisateur',
-      created_at: new Date(now - 1 * d - 6 * h).toISOString(),
-    },
-    {
-      id: 'seed-act-6',
-      project_id: 'proj-5',
-      project_name: 'Refonte Portail Utilisateur',
-      project_title: 'Refonte Portail Utilisateur',
-      user_id: 'user-julie',
-      actor_id: 'user-julie',
-      user: {
-        id: 'user-julie',
-        full_name: 'Julie Vasseur',
-        email: 'julie.v@tuwshiuah.com',
-        role: 'employee',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Julie%20Vasseur&gender=female',
-      },
-      action_type: 'UPLOAD_FILE',
-      action: 'upload_file',
-      entity_type: 'file',
-      description: 'a importé le document « maquette_figma_portail_v3.pdf »',
-      target_name: 'maquette_figma_portail_v3.pdf',
-      created_at: new Date(now - 1 * d - 8 * h).toISOString(),
-    },
-    {
-      id: 'seed-act-7',
-      project_id: 'proj-6',
-      project_name: 'Migration SI Interne & RAG',
-      project_title: 'Migration SI Interne & RAG',
-      user_id: 'user-admin',
-      actor_id: 'user-admin',
-      user: {
-        id: 'user-admin',
-        full_name: 'Alexandre Roy',
-        email: 'direction@tuwshiuah.com',
-        role: 'admin',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexandre%20Roy&gender=male',
-      },
-      action_type: 'CREATE_PROJECT',
-      action: 'create_project',
-      entity_type: 'project',
-      description: 'a créé le projet « Migration SI Interne & RAG »',
-      target_name: 'Migration SI Interne & RAG',
-      created_at: new Date(now - 2 * d - 4 * h).toISOString(),
-    },
-    {
-      id: 'seed-act-8',
-      project_id: 'proj-4',
-      project_name: 'Modèle IA Vision',
-      project_title: 'Modèle IA Vision',
-      user_id: 'user-sarah',
-      actor_id: 'user-sarah',
-      user: {
-        id: 'user-sarah',
-        full_name: 'Sarah Benali',
-        email: 'sarah.b@tuwshiuah.com',
-        role: 'employee',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah%20Benali&gender=female',
-      },
-      action_type: 'SUBMIT_WORK',
-      action: 'submit_work',
-      entity_type: 'submission',
-      description: 'a soumis le livrable « Dataset Entraînement Modèle v1 »',
-      target_name: 'Dataset Entraînement Modèle v1',
-      created_at: new Date(now - 3 * d).toISOString(),
-    },
-  ];
+const purgeDemoStorage = () => {
+  try {
+    localStorage.removeItem('tuws_activities_feed_v2');
+    localStorage.removeItem('tuws_activities_v1');
+    localStorage.removeItem('tuws_activities_cache_v1');
+  } catch {
+    // ignore
+  }
 };
 
+// Exécuter la purge dès l'importation
+purgeDemoStorage();
+
 /**
- * Récupère ou initialise les activités stockées localement
+ * Récupère les activités réelles enregistrées localement (actions faites par l'utilisateur connecté)
  */
-const getStoredActivities = (): Activity[] => {
+const getRealLocalActivities = (): Activity[] => {
   try {
     const raw = localStorage.getItem(ACTIVITIES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+      if (Array.isArray(parsed)) {
+        // Filtrer strictement : aucun enregistrement contenant 'seed-' ou des noms démo
+        return parsed.filter(
+          (a) =>
+            a &&
+            !a.id?.startsWith('seed-') &&
+            a.user?.full_name !== 'Sarah Benali' &&
+            a.user?.full_name !== 'Alexandre Roy' &&
+            a.user?.full_name !== 'Lucas Morel'
+        );
       }
     }
   } catch (e) {
     console.warn('[activitiesService] Erreur lecture localStorage :', e);
   }
-
-  const seeds = createSeedActivities();
-  try {
-    localStorage.setItem(ACTIVITIES_STORAGE_KEY, JSON.stringify(seeds));
-  } catch (e) {
-    console.warn('[activitiesService] Erreur écriture seed localStorage :', e);
-  }
-  return seeds;
+  return [];
 };
 
 /**
- * Sauvegarde les activités localement
+ * Sauvegarde les activités réelles en local
  */
-const saveStoredActivities = (activities: Activity[]): void => {
+const saveRealLocalActivities = (activities: Activity[]): void => {
   try {
-    localStorage.setItem(ACTIVITIES_STORAGE_KEY, JSON.stringify(activities.slice(0, 100)));
+    const clean = activities.filter((a) => !a.id?.startsWith('seed-'));
+    localStorage.setItem(ACTIVITIES_STORAGE_KEY, JSON.stringify(clean.slice(0, 100)));
   } catch (e) {
     console.warn('[activitiesService] Erreur sauvegarde localStorage :', e);
   }
 };
 
 /**
- * Synthétise une description éditoriale claire à partir de l'action, de l'entité et des métadonnées
+ * Synthétise une description éditoriale claire à partir de l'action, de l'entité et des métadonnées réelles
  */
 const formatActivityDescription = (
   action?: string,
@@ -290,31 +127,35 @@ const resolveActionType = (action?: string): Activity['action_type'] => {
 
 export const activitiesService = {
   /**
-   * Récupère le flux des activités de l'agence avec contrôle strict des permissions par rôle.
-   * - Administrateur : Toutes les activités de l'agence.
-   * - Employé : Uniquement les activités liées aux projets auxquels il est assigné ou qu'il a lui-même initiées.
-   * - Repli dynamique garanti : Si la table distante est vide ou inaccessible, affiche le journal local enrichi.
+   * Récupère le flux 100% RÉEL des activités de l'application :
+   * 1. Requête la table public.activities.
+   * 2. Syntétise également les événements réels existants (projets, soumissions de livrables, documents importés).
+   * 3. Récupère les vrais profils des utilisateurs de votre workspace (nom, rôle, avatar).
+   * 4. AUCUNE donnée démo / fictive.
    */
   async getActivities(userId?: string, isAdmin: boolean = true, limit: number = 60): Promise<Activity[]> {
-    let remoteActivities: Activity[] = [];
+    purgeDemoStorage();
+
+    const realActivities: Activity[] = [];
+    const seenEntityKeys = new Set<string>();
 
     if (isSupabaseConfigured) {
       try {
         let allowedProjectIds: string[] = [];
 
-        // Si l'utilisateur est employé, identifier ses projets assignés
+        // Pour les employés, filtrer sur leurs projets assignés
         if (!isAdmin && userId) {
-          const { data: memberRows, error: memberErr } = await supabase
+          const { data: memberRows } = await supabase
             .from('project_members')
             .select('project_id')
             .eq('user_id', userId);
 
-          if (!memberErr && memberRows) {
+          if (memberRows) {
             allowedProjectIds = memberRows.map((m) => m.project_id);
           }
         }
 
-        // Requête principale sur public.activities
+        // 1. Récupération des activités explicites depuis public.activities
         const { data: rawActivities, error: actErr } = await supabase
           .from('activities')
           .select(`
@@ -331,8 +172,7 @@ export const activitiesService = {
           .limit(limit);
 
         if (!actErr && rawActivities && rawActivities.length > 0) {
-          // Filtrage de sécurité côté rôle (employé)
-          const visibleActivities = isAdmin
+          const visibleRows = isAdmin
             ? rawActivities
             : rawActivities.filter(
                 (a) =>
@@ -340,141 +180,265 @@ export const activitiesService = {
                   a.actor_id === userId
               );
 
-          if (visibleActivities.length > 0) {
-            // Récupération des profils des acteurs
-            const actorIds = Array.from(new Set(visibleActivities.map((a) => a.actor_id).filter(Boolean)));
-            const actorsById: Record<string, Profile> = {};
-
-            if (actorIds.length > 0) {
+          for (const row of visibleRows) {
+            let metaObj: Record<string, unknown> | null = null;
+            if (row.metadata && typeof row.metadata === 'object') {
+              metaObj = row.metadata as Record<string, unknown>;
+            } else if (typeof row.metadata === 'string') {
               try {
-                const { data: profilesData } = await supabase
-                  .from('profiles')
-                  .select('id, full_name, email, role, avatar_url')
-                  .in('id', actorIds);
-
-                if (profilesData) {
-                  for (const p of profilesData) {
-                    actorsById[p.id] = {
-                      id: p.id,
-                      full_name: p.full_name || 'Membre Agence',
-                      email: p.email || '',
-                      role: (p.role?.toLowerCase() === 'admin' ? 'admin' : 'employee') as UserRole,
-                      avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
-                        p.full_name || p.id
-                      )}`,
-                    };
-                  }
-                }
-              } catch (err) {
-                console.warn('[activitiesService] Erreur récupération profiles acteurs :', err);
+                metaObj = JSON.parse(row.metadata);
+              } catch {
+                metaObj = null;
               }
             }
 
-            // Récupération des noms des projets concernés
-            const projectIds = Array.from(new Set(visibleActivities.map((a) => a.project_id).filter(Boolean)));
-            const projectsById: Record<string, { id: string; name: string }> = {};
+            const description = formatActivityDescription(row.action, row.entity_type, metaObj);
+            const targetName =
+              (metaObj &&
+                ('target_name' in metaObj || 'title' in metaObj || 'name' in metaObj) &&
+                String((metaObj as any).target_name || (metaObj as any).title || (metaObj as any).name)) ||
+              undefined;
 
-            if (projectIds.length > 0) {
-              try {
-                const { data: projectsData } = await supabase
-                  .from('projects')
-                  .select('id, name')
-                  .in('id', projectIds);
+            const dedupeKey = `${row.entity_type || 'act'}_${row.entity_id || row.id}_${row.action}`;
+            seenEntityKeys.add(dedupeKey);
 
-                if (projectsData) {
-                  for (const pr of projectsData) {
-                    projectsById[pr.id] = { id: pr.id, name: pr.name || 'Projet sans titre' };
-                  }
-                }
-              } catch (err) {
-                console.warn('[activitiesService] Erreur récupération projets liés aux activités :', err);
-              }
-            }
-
-            // Construction des objets Activity avec mapping rigoureux
-            remoteActivities = visibleActivities.map((row) => {
-              let metaObj: Record<string, unknown> | null = null;
-              if (row.metadata && typeof row.metadata === 'object') {
-                metaObj = row.metadata as Record<string, unknown>;
-              } else if (typeof row.metadata === 'string') {
-                try {
-                  metaObj = JSON.parse(row.metadata);
-                } catch {
-                  metaObj = null;
-                }
-              }
-
-              const description = formatActivityDescription(row.action, row.entity_type, metaObj);
-              const targetName =
-                (metaObj &&
-                  ('target_name' in metaObj || 'title' in metaObj || 'name' in metaObj) &&
-                  String((metaObj as any).target_name || (metaObj as any).title || (metaObj as any).name)) ||
-                undefined;
-
-              const projectName = row.project_id ? projectsById[row.project_id]?.name : undefined;
-
-              return {
-                id: row.id,
-                project_id: row.project_id,
-                project_title: projectName,
-                project_name: projectName,
-                user_id: row.actor_id,
-                actor_id: row.actor_id,
-                user: actorsById[row.actor_id] || {
-                  id: row.actor_id,
-                  full_name: 'Collaborateur',
-                  email: '',
-                  role: 'employee',
-                  avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
-                    row.actor_id || 'user'
-                  )}`,
-                },
-                action_type: resolveActionType(row.action),
-                action: row.action,
-                entity_type: row.entity_type,
-                entity_id: row.entity_id,
-                metadata: metaObj,
-                description,
-                target_name: targetName,
-                created_at: row.created_at,
-              };
+            realActivities.push({
+              id: row.id,
+              project_id: row.project_id,
+              user_id: row.actor_id,
+              actor_id: row.actor_id,
+              action_type: resolveActionType(row.action),
+              action: row.action,
+              entity_type: row.entity_type,
+              entity_id: row.entity_id,
+              metadata: metaObj,
+              description,
+              target_name: targetName,
+              created_at: row.created_at,
             });
           }
         }
+
+        // 2. Synthese automatique des créations de projets réels
+        try {
+          let projQuery = supabase
+            .from('projects')
+            .select('id, name, created_by, created_at')
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          if (!isAdmin && allowedProjectIds.length > 0) {
+            projQuery = projQuery.in('id', allowedProjectIds);
+          }
+
+          const { data: realProjects } = await projQuery;
+          if (realProjects) {
+            for (const p of realProjects) {
+              const dedupeKey = `project_${p.id}_create_project`;
+              if (!seenEntityKeys.has(dedupeKey)) {
+                seenEntityKeys.add(dedupeKey);
+                realActivities.push({
+                  id: `synth-proj-${p.id}`,
+                  project_id: p.id,
+                  project_name: p.name,
+                  project_title: p.name,
+                  user_id: p.created_by,
+                  actor_id: p.created_by,
+                  action_type: 'CREATE_PROJECT',
+                  action: 'create_project',
+                  entity_type: 'project',
+                  entity_id: p.id,
+                  description: `a créé le projet « ${p.name} »`,
+                  target_name: p.name,
+                  created_at: p.created_at,
+                });
+              }
+            }
+          }
+        } catch (projErr) {
+          console.warn('[activitiesService] Erreur synthèse projets :', projErr);
+        }
+
+        // 3. Synthèse automatique des soumissions de livrables réels
+        try {
+          let subQuery = supabase
+            .from('submissions')
+            .select('id, project_id, submitted_by, title, status, created_at, reviewed_by, reviewed_at')
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          if (!isAdmin && allowedProjectIds.length > 0) {
+            subQuery = subQuery.in('project_id', allowedProjectIds);
+          }
+
+          const { data: realSubs } = await subQuery;
+          if (realSubs) {
+            for (const s of realSubs) {
+              const dedupeKey = `submission_${s.id}_submit_work`;
+              if (!seenEntityKeys.has(dedupeKey)) {
+                seenEntityKeys.add(dedupeKey);
+                realActivities.push({
+                  id: `synth-sub-${s.id}`,
+                  project_id: s.project_id,
+                  user_id: s.submitted_by,
+                  actor_id: s.submitted_by,
+                  action_type: s.status === 'APPROVED' ? 'APPROVE_WORK' : 'SUBMIT_WORK',
+                  action: s.status === 'APPROVED' ? 'approve_work' : 'submit_work',
+                  entity_type: 'submission',
+                  entity_id: s.id,
+                  description:
+                    s.status === 'APPROVED'
+                      ? `a validé le livrable « ${s.title} »`
+                      : `a soumis le livrable « ${s.title} »`,
+                  target_name: s.title,
+                  created_at: s.created_at,
+                });
+              }
+            }
+          }
+        } catch (subErr) {
+          console.warn('[activitiesService] Erreur synthèse soumissions :', subErr);
+        }
+
+        // 4. Synthèse automatique des fichiers réels importés
+        try {
+          let filesQuery = supabase
+            .from('files')
+            .select('id, project_id, name, uploaded_by, created_at')
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          if (!isAdmin && allowedProjectIds.length > 0) {
+            filesQuery = filesQuery.in('project_id', allowedProjectIds);
+          }
+
+          const { data: realFiles } = await filesQuery;
+          if (realFiles) {
+            for (const f of realFiles) {
+              const dedupeKey = `file_${f.id}_upload_file`;
+              if (!seenEntityKeys.has(dedupeKey)) {
+                seenEntityKeys.add(dedupeKey);
+                realActivities.push({
+                  id: `synth-file-${f.id}`,
+                  project_id: f.project_id,
+                  user_id: f.uploaded_by,
+                  actor_id: f.uploaded_by,
+                  action_type: 'UPLOAD_FILE',
+                  action: 'upload_file',
+                  entity_type: 'file',
+                  entity_id: f.id,
+                  description: `a importé le document « ${f.name} »`,
+                  target_name: f.name,
+                  created_at: f.created_at,
+                });
+              }
+            }
+          }
+        } catch (fileErr) {
+          console.warn('[activitiesService] Erreur synthèse fichiers :', fileErr);
+        }
+
+        // 5. Récupération des vrais profils des utilisateurs de votre workspace
+        const actorIds = Array.from(
+          new Set(realActivities.map((a) => a.actor_id || a.user_id).filter(Boolean) as string[])
+        );
+        const projectIds = Array.from(
+          new Set(realActivities.map((a) => a.project_id).filter(Boolean) as string[])
+        );
+
+        const profilesById: Record<string, Profile> = {};
+        if (actorIds.length > 0) {
+          try {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, full_name, email, role, avatar_url, gender')
+              .in('id', actorIds);
+
+            if (profilesData) {
+              for (const p of profilesData) {
+                const name = p.full_name || p.email?.split('@')[0] || 'Membre du workspace';
+                const avatar =
+                  p.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+
+                profilesById[p.id] = {
+                  id: p.id,
+                  full_name: name,
+                  email: p.email || '',
+                  role: (p.role?.toLowerCase() === 'admin' ? 'admin' : 'employee') as UserRole,
+                  avatar_url: avatar,
+                  gender: p.gender,
+                };
+              }
+            }
+          } catch (pErr) {
+            console.warn('[activitiesService] Erreur profils :', pErr);
+          }
+        }
+
+        // Récupération des noms réels des projets
+        const projectsById: Record<string, string> = {};
+        if (projectIds.length > 0) {
+          try {
+            const { data: prData } = await supabase
+              .from('projects')
+              .select('id, name')
+              .in('id', projectIds);
+
+            if (prData) {
+              for (const pr of prData) {
+                projectsById[pr.id] = pr.name || 'Projet';
+              }
+            }
+          } catch (prErr) {
+            console.warn('[activitiesService] Erreur projets :', prErr);
+          }
+        }
+
+        // Injection des profils et titres réels
+        for (const act of realActivities) {
+          const actId = act.actor_id || act.user_id;
+          if (actId && profilesById[actId]) {
+            act.user = profilesById[actId];
+          } else if (!act.user) {
+            act.user = {
+              id: actId || 'user',
+              full_name: 'Collaborateur',
+              email: '',
+              role: 'employee',
+              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(actId || 'user')}`,
+            };
+          }
+
+          if (act.project_id && projectsById[act.project_id]) {
+            act.project_name = projectsById[act.project_id];
+            act.project_title = projectsById[act.project_id];
+          }
+        }
       } catch (globalErr) {
-        console.warn('[activitiesService] Exception Supabase getActivities :', globalErr);
+        console.warn('[activitiesService] Erreur récupération activités réelles Supabase :', globalErr);
       }
     }
 
-    // Récupération locale pour fusion ou repli si distant est vide
-    const localActivities = getStoredActivities();
-
-    let combined: Activity[];
-    if (remoteActivities.length > 0) {
-      // Fusionner : privilégier distant, ajouter locaux récents non dupliqués
-      const remoteIds = new Set(remoteActivities.map((a) => a.id));
-      const localExtras = localActivities.filter((a) => !remoteIds.has(a.id) && !a.id.startsWith('seed-'));
-      combined = [...localExtras, ...remoteActivities];
-    } else {
-      // Distant vide ou inaccessible : utiliser le journal local garanti
-      combined = localActivities;
+    // Fusion avec les activités réelles récemment enregistrées dans la session locale
+    const localReal = getRealLocalActivities();
+    if (localReal.length > 0) {
+      const existingIds = new Set(realActivities.map((a) => a.id));
+      for (const loc of localReal) {
+        if (!existingIds.has(loc.id)) {
+          realActivities.push(loc);
+        }
+      }
     }
 
-    // Filtrage par permission pour les employés si mode local
-    if (!isAdmin && userId) {
-      combined = combined.filter((a) => a.actor_id === userId || a.user_id === userId);
-    }
+    // Tri chronologique décroissant strict (les plus récents en premier)
+    realActivities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Tri chronologique décroissant et limitation
-    combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return combined.slice(0, limit);
+    return realActivities.slice(0, limit);
   },
 
   /**
-   * Enregistre un nouvel événement dans le flux d'activité :
-   * - Met à jour immédiatement le cache local en temps réel.
-   * - Déclenche un événement custom pour actualiser l'interface instantanément.
-   * - Tente l'enregistrement asynchrone dans Supabase si connecté.
+   * Enregistre un événement réel dans le flux d'activité
    */
   async logActivity(params: LogActivityParams): Promise<boolean> {
     if (!params.actorId || !params.action) {
@@ -512,7 +476,7 @@ export const activitiesService = {
         : 'employee') as UserRole;
 
     const newActivity: Activity = {
-      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
       project_id: params.projectId || null,
       project_name: projectName,
       project_title: projectName,
@@ -535,15 +499,15 @@ export const activitiesService = {
       created_at: new Date().toISOString(),
     };
 
-    // 1. Enregistrement local immédiat
+    // 1. Enregistrement local
     try {
-      const current = getStoredActivities();
-      saveStoredActivities([newActivity, ...current]);
+      const current = getRealLocalActivities();
+      saveRealLocalActivities([newActivity, ...current]);
     } catch (e) {
       console.warn('[activitiesService] Erreur mise à jour locale :', e);
     }
 
-    // 2. Notification d'événement global
+    // 2. Notification locale
     try {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('tuws:activity_logged', { detail: newActivity }));
@@ -552,7 +516,7 @@ export const activitiesService = {
       // ignore
     }
 
-    // 3. Enregistrement dans Supabase si disponible
+    // 3. Enregistrement Supabase
     if (isSupabaseConfigured) {
       try {
         const payload = {
@@ -566,10 +530,10 @@ export const activitiesService = {
 
         const { error } = await supabase.from('activities').insert(payload);
         if (error) {
-          console.warn('[activitiesService] Supabase insert activity warning :', error.message);
+          console.warn('[activitiesService] Erreur insertion Supabase activity :', error.message);
         }
       } catch (err) {
-        console.warn('[activitiesService] Exception Supabase insert activity :', err);
+        console.warn('[activitiesService] Exception insertion Supabase activity :', err);
       }
     }
 
