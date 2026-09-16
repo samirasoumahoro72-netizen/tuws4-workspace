@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-tertiary-container": "#ea580c", "error": "#dc2626", "inverse-on-surface": "#f0f9ff", "on-surface": "#0f172a", "tertiary-fixed-dim": "#fed7aa", "on-primary-container": "#0369a1", "primary-fixed-dim": "#bae6fd", "primary": "#0284c7", "surface-container-low": "#f8fafc", "on-error-container": "#991b1b", "secondary-container": "#e0f2fe", "secondary": "#475569", "surface": "#f0f9ff", "surface-dim": "#e2e8f0", "on-tertiary": "#ffffff", "on-error": "#ffffff", "on-surface-variant": "#334155", "surface-container-highest": "#bae6fd", "inverse-primary": "#7dd3fc", "surface-tint": "#0284c7", "tertiary-fixed": "#ffedd5", "on-background": "#0f172a", "on-primary": "#ffffff", "on-tertiary-fixed-variant": "#9a3412", "on-secondary-fixed-variant": "#0369a1", "primary-container": "#0284c7", "error-container": "#fee2e2", "surface-container": "#e0f2fe", "on-secondary": "#ffffff", "primary-fixed": "#e0f2fe", "on-tertiary-fixed": "#7c2d12", "on-secondary-container": "#0369a1", "secondary-fixed": "#bae6fd", "on-primary-fixed": "#0c4a6e", "surface-container-high": "#dbeafe", "inverse-surface": "#0f172a", "secondary-fixed-dim": "#7dd3fc", "tertiary": "#c2410c", "surface-variant": "#e0f2fe", "on-secondary-fixed": "#075985", "surface-container-lowest": "#ffffff", "background": "#f8fafc", "outline-variant": "#cbd5e1", "outline": "#64748b", "on-primary-fixed-variant": "#0284c7", "tertiary-container": "#ffedd5", "surface-bright": "#ffffff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "header-height": "4rem", "gutter-mobile": "1rem", "space-3xl": "3rem", "sidebar-collapsed": "4.5rem", "gutter-desktop": "1.5rem", "space-2xs": "0.125rem", "space-xl": "1.5rem", "sidebar-width": "16.25rem", "space-sm": "0.5rem", "space-2xl": "2rem", "space-lg": "1rem", "space-xs": "0.25rem", "space-md": "0.75rem" }, fontFamily: { "label-sm": ["Inter", "sans-serif"], "headline-md": ["Plus Jakarta Sans", "sans-serif"], "headline-sm": ["Plus Jakarta Sans", "sans-serif"], "body-lg": ["Inter", "sans-serif"], "headline-xl": ["Plus Jakarta Sans", "sans-serif"], "data-mono": ["Inter", "monospace"], "headline-lg": ["Plus Jakarta Sans", "sans-serif"], "headline-xl-mobile": ["Plus Jakarta Sans", "sans-serif"], "body-md": ["Inter", "sans-serif"], "label-md": ["Inter", "sans-serif"], "body-sm": ["Inter", "sans-serif"] }, fontSize: { "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "data-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-[#f8fafc] font-body-md text-slate-800 flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-white/85 backdrop-blur-xl border-b border-sky-100/80 shadow-[0_1px_10px_rgba(2,132,199,0.05)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="TUWSHIUAH Logo Bleu Ciel" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UYNMYL4mXCBrLGnlRTEmChCg7Sc9UqWki50CRnF7IwoS22cIkCIBWDj5Q0s4nNXpgdvv_mXnamqaSH3XS37-LgOqkhpCDfeehHtzC-EPKSqoKYaMipHMhQogD1czHH8VP0BrnyO9zCRDMigQ7dIxU7FbF-h47eXN8BI2c0Y2u2kq_YhDChxuJGWSFZ8RGWNbC-YuKYIR1P_UrVp_u8RcBafNhNziFYIJmSbrEK1dbyjJzMtblpvXG3CDLI"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="px-space-xs py-0.5 rounded bg-sky-100 text-sky-800 font-label-sm text-[10px] font-semibold tracking-wide shrink-0">Workspace Privé</span></div><span class="font-label-sm text-label-sm text-slate-500 truncate">Dashboard Patron</span></div></div><div class="flex items-center gap-space-xs shrink-0"><a class="w-11 h-11 flex items-center justify-center rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors relative" data-path="notifications" href="#"><span class="material-symbols-outlined">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-500"></span></a><div class="relative w-11 h-11 flex items-center justify-center shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-sky-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPJCLfEENGgqwjFPoIP3RHGeX497KJBhnSQ4dP75ARM0zuO1SR-2sLaqWmKr_9xRzE-UnB-e7lppUJHwrwB-DKMSMb6nghcGlDsYiG54tE94qe9gmYAZiHK7_fkFwwLnkv6zjaDN0IfLtSLBuzRU6SWmlkz1zf1Iwkr8p1mQYNmby_iXZfDxEdnMgUP01tgOu4oRdUjLYYX6Y9vp1pEoE_cI9dE5SH_vJ5ap9LmDlYKJ58Z_P5uHYFgg"/><span class="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-[#f8fafc] min-h-screen"><div class="flex flex-col w-full px-gutter-mobile gap-space-lg pb-space-2xl">
+<!-- Direction Header & Welcome Hero Card -->
+<div class="flex flex-col gap-space-md pt-space-md">
+<div class="flex items-center justify-between">
+<div class="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-sm shadow-sky-500/20">
+<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Vue Direction Générale</span>
+</div>
+<div class="flex items-center gap-1 bg-sky-100/70 p-0.5 rounded-lg border border-sky-200/50">
+<button class="px-space-sm py-1 rounded font-label-sm text-label-sm bg-white text-sky-700 shadow-sm font-semibold transition-all" id="filter-today" onclick="switchFilter('today')">Aujourd'hui</button>
+<button class="px-space-sm py-1 rounded font-label-sm text-label-sm text-slate-500 hover:text-sky-700 transition-all" id="filter-week" onclick="switchFilter('week')">Cette semaine</button>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<h1 class="font-headline-lg text-headline-lg text-slate-900 tracking-tight">Bonjour, M. le Directeur</h1>
+<p class="font-body-sm text-body-sm text-slate-500">Supervision globale et arbitrages opérationnels de l'agence.</p>
+</div>
+<!-- Primary Quick Actions -->
+<div class="grid grid-cols-2 gap-space-sm mt-space-2xs">
+<button class="flex items-center justify-center gap-space-xs h-11 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-label-md text-label-md shadow-md shadow-orange-600/20 active:scale-95 transition-all" onclick="triggerToast('Création d\'un nouveau projet')">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Nouveau projet</span>
+</button>
+<button class="flex items-center justify-center gap-space-xs h-11 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-label-md text-label-md shadow-md shadow-sky-600/20 active:scale-95 transition-all" onclick="triggerToast('Attribution de tâche ouverte')">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span>Attribuer tâche</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics 2x2 Grid -->
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Stat 1: Equipe -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col justify-between gap-space-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-400 uppercase tracking-wider font-semibold">Effectif</span>
+<div class="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-slate-900 font-bold">5 membres</div>
+<div class="font-body-sm text-body-sm text-slate-500 truncate mt-0.5">1 Patron • 4 Collaborateurs</div>
+</div>
+<div class="w-full bg-sky-100/70 h-1.5 rounded-full overflow-hidden">
+<div class="bg-sky-500 h-full w-full rounded-full"></div>
+</div>
+</div>
+<!-- Stat 2: Projets Actifs -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col justify-between gap-space-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-400 uppercase tracking-wider font-semibold">Projets Actifs</span>
+<div class="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-slate-900 font-bold">6 projets</div>
+<div class="font-body-sm text-body-sm text-slate-500 truncate mt-0.5">4 en cours • 1 retard • 1 fin</div>
+</div>
+<div class="w-full bg-sky-100/70 h-1.5 rounded-full overflow-hidden flex gap-0.5">
+<div class="bg-sky-500 h-full w-4/6 rounded-l-full"></div>
+<div class="bg-red-500 h-full w-1/6"></div>
+<div class="bg-emerald-500 h-full w-1/6 rounded-r-full"></div>
+</div>
+</div>
+<!-- Stat 3: Validations en attente -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col justify-between gap-space-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-400 uppercase tracking-wider font-semibold">À Valider</span>
+<div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined text-[18px]">rule_folder</span>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-slate-900 font-bold">3</span>
+<span class="px-space-xs py-0.5 rounded bg-orange-100 text-orange-700 font-label-sm text-label-sm font-semibold">Urgent</span>
+</div>
+<div class="font-body-sm text-body-sm text-slate-500 truncate mt-0.5">Livrables soumis</div>
+</div>
+<div class="w-full bg-sky-100/70 h-1.5 rounded-full overflow-hidden">
+<div class="bg-orange-500 h-full w-3/4 rounded-full"></div>
+</div>
+</div>
+<!-- Stat 4: Fichiers & Stockage -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col justify-between gap-space-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-400 uppercase tracking-wider font-semibold">Stockage</span>
+<div class="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-slate-900 font-bold">142 docs</div>
+<div class="font-body-sm text-body-sm text-slate-500 truncate mt-0.5">2.4 Go sur 10 Go</div>
+</div>
+<div class="w-full bg-sky-100/70 h-1.5 rounded-full overflow-hidden">
+<div class="bg-sky-500 h-full w-[24%] rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Priority Deliverables awaiting Director Approval -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+<h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Travaux à valider en priorité</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-medium">2 requêtes</span>
+</div>
+<!-- Item 1 -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-md transition-all" id="deliverable-card-1">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-start gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+<span class="material-symbols-outlined text-[20px]">security</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-semibold truncate">Audit Réseau Core &amp; VPN</h3>
+<p class="font-body-sm text-body-sm text-slate-500 flex items-center gap-1 mt-0.5">
+<span>Soumis par</span>
+<strong class="font-semibold text-slate-800">Thomas L.</strong>
+<span>• Il y a 45 min</span>
+</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-orange-100 text-orange-700 font-medium shrink-0">
+          En attente
+        </span>
+</div>
+<div class="p-space-sm rounded-lg bg-sky-50/50 border border-sky-100/60 flex items-center justify-between text-slate-600 font-body-sm text-body-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-[18px] text-sky-600">description</span>
+<span class="truncate">rapport_audit_tuwshiuah_v1.4.pdf</span>
+</div>
+<span class="text-label-sm font-label-sm text-slate-500 shrink-0 ml-2">4.8 Mo</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 h-9 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-label-md text-label-md flex items-center justify-center gap-1 transition-colors" onclick="triggerToast('Ouverture du document PDF...')">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Examiner</span>
+</button>
+<button class="flex-1 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-label-md text-label-md flex items-center justify-center gap-1 transition-colors shadow-sm" onclick="approveWork('deliverable-card-1', 'Audit Réseau Core')">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Valider</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-md transition-all" id="deliverable-card-2">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-start gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-semibold truncate">Modèle IA Vision - Détection</h3>
+<p class="font-body-sm text-body-sm text-slate-500 flex items-center gap-1 mt-0.5">
+<span>Soumis par</span>
+<strong class="font-semibold text-slate-800">Sarah B.</strong>
+<span>• Il y a 15 min</span>
+</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-orange-100 text-orange-700 font-medium shrink-0">
+          En attente
+        </span>
+</div>
+<div class="p-space-sm rounded-lg bg-sky-50/50 border border-sky-100/60 flex items-center justify-between text-slate-600 font-body-sm text-body-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-[18px] text-sky-600">memory</span>
+<span class="truncate">weights_yolo_finetuned_alpha.bin</span>
+</div>
+<span class="text-label-sm font-label-sm text-slate-500 shrink-0 ml-2">128 Mo</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 h-9 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-label-md text-label-md flex items-center justify-center gap-1 transition-colors" onclick="triggerToast('Inspection du modèle IA...')">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Examiner</span>
+</button>
+<button class="flex-1 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-label-md text-label-md flex items-center justify-center gap-1 transition-colors shadow-sm" onclick="approveWork('deliverable-card-2', 'Modèle IA Vision')">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Valider</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section: Active Projects Pipeline -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Projets en cours</h2>
+<a class="font-label-sm text-label-sm text-sky-600 hover:text-sky-700 hover:underline flex items-center gap-0.5 font-semibold" data-path="projets" href="#">
+<span>Voir les 6</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+<!-- Project 1 -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="min-w-0">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-semibold truncate">Plateforme NLP Client Alpha</h3>
+</div>
+<p class="font-body-sm text-body-sm text-slate-500 mt-0.5">Traitement sémantique et génération RAG</p>
+</div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-sky-100 text-sky-800 font-semibold shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+          En cours
+        </span>
+</div>
+<div class="flex flex-col gap-1 mt-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-slate-500">Progression globale</span>
+<span class="font-bold text-sky-700">75%</span>
+</div>
+<div class="w-full bg-sky-100/70 h-2 rounded-full overflow-hidden">
+<div class="bg-sky-500 h-full rounded-full transition-all duration-500" style="width: 75%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-slate-500 font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-slate-400">event</span>
+<span class="font-data-mono text-data-mono">Échéance: 18 Nov</span>
+</div>
+<!-- Team Avatars Stack -->
+<div class="flex items-center -space-x-2">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm ring-2 ring-white" data-alt="Close up modern studio portrait of software engineer Thomas with dark hair looking focused against a minimalist slate studio backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApILb3xwsRREhNwsKaKQQXc_PpYNtz23SQ44ajfHfUbyWFS7Z_B3Tos-vqLOup9RWrF6yMJqtJWySR1XIyzNGYUXsPOvhyycZreU74qiaomH_jZsNw5ki6PWnwCHqfvdgkDtKVGM-PHvxDfU6w33RhchcSRztYcXB3ibVc508c4EYo-BDPohm3N12eKzW44HyjIc-gX7jmb-ae1lG3PuHk22EnZj0j9YiwhdnlefQGzQMXSLwtPlKEQQ"/>
+<img class="w-6 h-6 rounded-full object-cover shadow-sm ring-2 ring-white" data-alt="Portrait of Sarah, data scientist woman with glasses in a bright architectural tech office with neutral gray tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZdqQI_MOItiAbAXwqZqqyv5mTgrWqbiMXEtgpO_9BEqCr2rmg-34BBey0Jm6ZX-k8_3NjbekDlV_h8hsSaPpFRlgNMvbxmyzBHKdHL3mpe-8TGnRSIueBv5eSt1-5Ptek6BxchSEC5u4rus6iLgMaQ7_xKidkx8JqFTJVd3kkt7MUn27wkQj5KBie6R5QHVw5cS_ggBsHIX0NgzpTLYO2OqnYjm-QQPuq_Jx7m_9dCOeweNkKcWNugA"/>
+<div class="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-label-sm text-[10px] flex items-center justify-center font-bold shadow-sm ring-2 ring-white">
+            +1
+          </div>
+</div>
+</div>
+</div>
+<!-- Project 2 -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-semibold truncate">Infrastructure Cloud Sécurisée</h3>
+<p class="font-body-sm text-body-sm text-slate-500 mt-0.5">Cluster Kubernetes hybride &amp; conformité</p>
+</div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-red-100 text-red-700 font-semibold shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+          En retard
+        </span>
+</div>
+<div class="flex flex-col gap-1 mt-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-slate-500">Progression globale</span>
+<span class="font-bold text-red-600">40%</span>
+</div>
+<div class="w-full bg-sky-100/70 h-2 rounded-full overflow-hidden">
+<div class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 40%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-slate-500 font-body-sm text-body-sm">
+<div class="flex items-center gap-1 text-red-600">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-data-mono text-data-mono font-semibold">Échéance dépassée: 12 Nov</span>
+</div>
+<div class="flex items-center -space-x-2">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm ring-2 ring-white" data-alt="Portrait of devops architect Lucas, short beard, neutral tech hoodie, clean corporate photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGfO6AjmLkRmjqi2xaf1Y1DqcKPa-FdclnSXLgk_Skmozk0dOvVuKKktE0NSbEKuQOO2oLZeC1j-dtU1_OcIUAfPB-xE4bkwuzePF-c2MNu7bExXrSu4RnpgLSTvunXLhEzb-sHYHBKVIiabRTSWsoMaARpboOsaz1uSVd2VDggEduN3uVtvn8FWQjhiq29v11RN8cnB9TsOyeeXvTyq7ZCzwRrsudK6to1Izx2CTeVUNIZ2T2KHaO8w"/>
+<div class="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-label-sm text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+            +1
+          </div>
+</div>
+</div>
+</div>
+<!-- Project 3 -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-semibold truncate">API Gateway Microservices</h3>
+<p class="font-body-sm text-body-sm text-slate-500 mt-0.5">Orchestration des flux de données internes</p>
+</div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-sky-100 text-sky-800 font-semibold shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+          En cours
+        </span>
+</div>
+<div class="flex flex-col gap-1 mt-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-slate-500">Progression globale</span>
+<span class="font-bold text-emerald-600">90%</span>
+</div>
+<div class="w-full bg-sky-100/70 h-2 rounded-full overflow-hidden">
+<div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 90%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-slate-500 font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-slate-400">event</span>
+<span class="font-data-mono text-data-mono">Échéance: 25 Nov</span>
+</div>
+<div class="flex items-center -space-x-2">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm ring-2 ring-white" data-alt="Portrait of senior female cloud consultant smiling warmly in modern corporate office setting with glass partitions" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoRlsEYJdtlkZi7_PiPnbR74ECxaECRXYHX6ruybvm2c1gGpVP7G4pDrZfoehA6K8aTg7o88CNR2mROcX0Mlad-ZejmuuMVkmTMAtp0H9EdkrAdApnVmTZIXenMlyCrRyge45TwirrVLJkUwl4H-nNrGvOtbLdrP4AWcfFhj6vvDrnuyWnWWeSQFtP4v60cY2vdBh2YmrQ1J3hMNjDPbYQwfR7RHgRIXLtt5PnOZfDrEpCXpdM1ytkEA"/>
+<img class="w-6 h-6 rounded-full object-cover shadow-sm ring-2 ring-white" data-alt="Portrait of engineer in tech office working quietly, warm ambient daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwnR5S_jlG-_Hp3CMvteDznBe4setrq9bxMyuPFr5_bqK09CwI5WHVSjUM2JIpPqUvGlFHI0jMtJsGg4zHHlDAr-4KP2bvlt6rFiZX5yr_-NZ8wmxqFgS-qv1t7ARJY6ZYWxzss6ckMfTQebuhkvuQwoQ5U_DD7O-HHziRowWPxb90uSQIKrEdib-_huCHJn-22_0ZnLYlXV8IM3rkNIuqKKzwPCnCl-TmU2Zqr2yUbBNKME2fEGfyyQ"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Agency Team Overview Strip (Director View Special) -->
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-sky-600">groups</span>
+<h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Statut Collaborateurs (4)</h2>
+</div>
+<span class="font-label-sm text-label-sm text-emerald-600 flex items-center gap-1 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+        Tous actifs
+      </span>
+</div>
+<div class="grid grid-cols-4 gap-space-xs pt-1">
+<div class="flex flex-col items-center text-center p-space-xs rounded-lg bg-sky-50/50 hover:bg-sky-50 border border-sky-100/50 transition-colors">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-sky-200/60" data-alt="Portrait of Thomas, lead developer at TUWSHIUAH, natural high quality corporate lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0DOlxvloCAHwqXgFydMdJ3-YbrHwTE9jH7X89MvPUHdgxSFF7mcUdcAQ4hTL0wfYPSDFSZYxkfUywo3NYdFJp0VB6WeLtq8fCaHlqrISmiY7v6w171m6Lt1K_CbqwOzp24SFjFwMU_Bdgxdbga-DJCUnWdebeZezIFKUkqWu1dZY3kA95qkUTm8qPpLzw5ADwUPA6ezh5CfWxIOcYh5CeuWDfYUkZRwHlqwxUN8URzCtyE5xoTsW5gA"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-800 font-medium mt-1 truncate w-full">Thomas</span>
+<span class="font-body-sm text-[10px] text-slate-400 truncate w-full">Dev Core</span>
+</div>
+<div class="flex flex-col items-center text-center p-space-xs rounded-lg bg-sky-50/50 hover:bg-sky-50 border border-sky-100/50 transition-colors">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-sky-200/60" data-alt="Portrait of Sarah, senior AI research specialist in crisp minimalist aesthetic portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALvI3IFPwuJ7wQIOHx6DsgVnWeedKWmjbviHzTqfHZwsyXk3VpnWh51AnB2f3CsVHe0nbekOOSfWAPqjfY4SeZEwpK-0swgAV1z6V2eMhlh8IRzym_Lqo9HNBdgdIafC_K2Kmu8CjbrHdu6xMIqjDTlZU2LZwttLpOIhmm8uabjseRPnmjb3bu2SpCZB6f5EnVFKIiVXHZ3-R5b8_ZEjlaiyFq4MIivmqoLaPbILvAU5OgGZfkWDqeUg"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-800 font-medium mt-1 truncate w-full">Sarah</span>
+<span class="font-body-sm text-[10px] text-slate-400 truncate w-full">IA / Vision</span>
+</div>
+<div class="flex flex-col items-center text-center p-space-xs rounded-lg bg-sky-50/50 hover:bg-sky-50 border border-sky-100/50 transition-colors">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-sky-200/60" data-alt="Portrait of Lucas, devops engineer at agency TUWSHIUAH, focused and calm look" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJ3Pd8e8AR4Y-U2dWPQ--WTLz4joa4EPSyJVF1bqc3sBIX12yX-C5MQnmizbfdLOStRH83Nq3mhmBuqt9vZw82wjNKuMfLhhDpWG1t6J59VUty_HSyVqzgnzpBzcVolkhSyOTOjRod99sAe9JdOC_zgUT87xVeCUyrqmzJ3OZUuLxzQPrI00c3Jevj-kCFKjQcoTA3q1YowZAP6HmNeLEg-J1p02WtRp0ZFfPX1XeU5dhCVvTUzI-8lg"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-white"></span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-800 font-medium mt-1 truncate w-full">Lucas</span>
+<span class="font-body-sm text-[10px] text-slate-400 truncate w-full">Cloud/Sec</span>
+</div>
+<div class="flex flex-col items-center text-center p-space-xs rounded-lg bg-sky-50/50 hover:bg-sky-50 border border-sky-100/50 transition-colors">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-sky-200/60" data-alt="Portrait of Julie, UI UX designer and frontend engineer in modern tech agency" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAf55ekWo1A4IaCtYgnwces4YnJvd5ohlvzi0t2yFlx1320auDPjbN0YozlcLkgMVQ5hGtAi73A6OqkauRu8Y_5C4HjGdxKpvn987ixHms8s2Ze3lNTfZN_iwTuygvPHVUZxc36xnPlAOJxqpbPjMNZuBS2MXVMYFOctoCl8Cap3Yt0DFEnh-CtXnJqDHg-4j0ZM_bT6_2T5UE_ZavagcSZXW9xqZgQp6LpkBe1w3NlA3z_VF8pAgKIAA"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-800 font-medium mt-1 truncate w-full">Julie</span>
+<span class="font-body-sm text-[10px] text-slate-400 truncate w-full">Frontend</span>
+</div>
+</div>
+</div>
+<!-- Activity Audit Stream (Timeline) -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Flux d'Activité Récente</h2>
+<button class="font-label-sm text-label-sm text-slate-500 flex items-center gap-1 hover:text-sky-600 transition-colors" onclick="triggerToast('Fil d\'audit mis à jour')">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Actualiser</span>
+</button>
+</div>
+<div class="bg-white p-space-md rounded-xl border border-sky-100/80 shadow-[0_2px_8px_rgba(2,132,199,0.04)] flex flex-col">
+<div class="relative pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-sky-100">
+<!-- Timeline 1 -->
+<div class="relative">
+<div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.15)]"></div>
+<div class="flex flex-col gap-0.5">
+<p class="font-body-md text-body-md text-slate-800">
+<strong class="font-semibold text-slate-900">Sarah B.</strong> a soumis le travail <span class="font-semibold text-orange-600">[Modèle IA Vision]</span>
+</p>
+<span class="font-data-mono text-data-mono text-slate-400">Il y a 15 min • Module Détection Objets</span>
+</div>
+</div>
+<!-- Timeline 2 -->
+<div class="relative">
+<div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.2)]"></div>
+<div class="flex flex-col gap-0.5">
+<p class="font-body-md text-body-md text-slate-800">
+<strong class="font-semibold text-slate-900">Lucas M.</strong> a téléversé <span class="font-semibold text-sky-700">[spec_technique_v2.pdf]</span>
+</p>
+<span class="font-data-mono text-data-mono text-slate-400">Il y a 1h • Espace Fichiers Sécurisé</span>
+</div>
+</div>
+<!-- Timeline 3 -->
+<div class="relative">
+<div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)]"></div>
+<div class="flex flex-col gap-0.5">
+<p class="font-body-md text-body-md text-slate-800">
+              Nouveau projet <span class="font-semibold text-sky-700">[Migration SI Interne]</span> initialisé
+            </p>
+<span class="font-data-mono text-data-mono text-slate-400">Il y a 3h • Créé par Direction</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Micro Interaction Toast Feedback Container -->
+<div class="fixed bottom-20 left-4 right-4 z-50 transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none" id="action-toast">
+<div class="bg-slate-900 text-white px-space-md py-space-sm rounded-xl shadow-xl border border-sky-500/20 flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-sky-400" id="toast-icon">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium flex-1 truncate" id="toast-message">Action confirmée</span>
+</div>
+</div>
+</div>
+<script>
+  function switchFilter(mode) {
+    const todayBtn = document.getElementById('filter-today');
+    const weekBtn = document.getElementById('filter-week');
+    
+    if (mode === 'today') {
+      todayBtn.className = 'px-space-sm py-1 rounded font-label-sm text-label-sm bg-white text-sky-700 shadow-sm font-semibold transition-all';
+      weekBtn.className = 'px-space-sm py-1 rounded font-label-sm text-label-sm text-slate-500 hover:text-sky-700 transition-all';
+      triggerToast('Période appliquée : Aujourd\'hui');
+    } else {
+      weekBtn.className = 'px-space-sm py-1 rounded font-label-sm text-label-sm bg-white text-sky-700 shadow-sm font-semibold transition-all';
+      todayBtn.className = 'px-space-sm py-1 rounded font-label-sm text-label-sm text-slate-500 hover:text-sky-700 transition-all';
+      triggerToast('Période appliquée : 7 derniers jours');
+    }
+  }
+
+  function approveWork(cardId, workTitle) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    
+    card.classList.add('scale-[0.98]', 'opacity-60');
+    setTimeout(() => {
+      card.innerHTML = `
+        <div class="p-space-sm rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-emerald-600">verified</span>
+            <span class="font-body-sm text-body-sm font-semibold">${workTitle} validé par la Direction</span>
+          </div>
+          <span class="font-data-mono text-[11px] text-emerald-700">À l'instant</span>
+        </div>
+      `;
+      card.classList.remove('opacity-60', 'scale-[0.98]');
+      triggerToast(`Livrable "${workTitle}" approuvé avec succès !`);
+    }, 250);
+  }
+
+  function triggerToast(msg) {
+    const toast = document.getElementById('action-toast');
+    const toastMsg = document.getElementById('toast-message');
+    if (!toast || !toastMsg) return;
+    
+    toastMsg.textContent = msg;
+    toast.classList.remove('translate-y-32', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    
+    setTimeout(() => {
+      toast.classList.add('translate-y-32', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2600);
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-white/90 backdrop-blur-xl border-t border-sky-100 shadow-[0_-2px_10px_rgba(2,132,199,0.05)]"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-sky-600 font-semibold gap-space-2xs" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-[11px]">Tableau</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-slate-500 hover:text-sky-600 transition-colors gap-space-2xs" data-path="projets" href="#"><span class="material-symbols-outlined text-[22px]">folder_open</span><span class="font-label-sm text-[11px]">Projets</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-slate-500 hover:text-sky-600 transition-colors gap-space-2xs" data-path="fichiers" href="#"><span class="material-symbols-outlined text-[22px]">cloud</span><span class="font-label-sm text-[11px]">Fichiers</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-slate-500 hover:text-sky-600 transition-colors gap-space-2xs relative" data-path="messages" href="#"><span class="material-symbols-outlined text-[22px]">chat_bubble</span><span class="font-label-sm text-[11px]">Messages</span><span class="absolute top-1 right-3.5 w-2 h-2 rounded-full bg-amber-500"></span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-slate-500 hover:text-sky-600 transition-colors gap-space-2xs" data-path="equipe" href="#"><span class="material-symbols-outlined text-[22px]">groups</span><span class="font-label-sm text-[11px]">Équipe</span></a></div></nav></body></html>

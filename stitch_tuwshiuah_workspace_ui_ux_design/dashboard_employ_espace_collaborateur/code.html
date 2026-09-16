@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-tertiary-container": "#ea6803", "error": "#ba1a1a", "inverse-on-surface": "#eaf1ff", "on-surface": "#0b1c30", "tertiary-fixed-dim": "#ffb690", "on-primary-container": "#7991af", "primary-fixed-dim": "#b0c9e8", "primary": "#001428", "surface-container-low": "#eff4ff", "on-error-container": "#93000a", "secondary-container": "#d5e0f8", "secondary": "#545f73", "surface": "#f8f9ff", "surface-dim": "#cbdbf5", "on-tertiary": "#ffffff", "on-error": "#ffffff", "on-surface-variant": "#43474d", "surface-container-highest": "#d3e4fe", "inverse-primary": "#b0c9e8", "surface-tint": "#49607c", "tertiary-fixed": "#ffdbca", "on-background": "#0b1c30", "on-primary": "#ffffff", "on-tertiary-fixed-variant": "#783200", "on-secondary-fixed-variant": "#3c475a", "primary-container": "#0f2942", "error-container": "#ffdad6", "surface-container": "#e5eeff", "on-secondary": "#ffffff", "primary-fixed": "#d1e4ff", "on-tertiary-fixed": "#341100", "on-secondary-container": "#586377", "secondary-fixed": "#d8e3fb", "on-primary-fixed": "#011d35", "surface-container-high": "#dce9ff", "inverse-surface": "#213145", "secondary-fixed-dim": "#bcc7de", "tertiary": "#260b00", "surface-variant": "#d3e4fe", "on-secondary-fixed": "#111c2d", "surface-container-lowest": "#ffffff", "background": "#f8f9ff", "outline-variant": "#c3c6ce", "outline": "#74777e", "on-primary-fixed-variant": "#314863", "tertiary-container": "#471a00", "surface-bright": "#f8f9ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "header-height": "4rem", "gutter-mobile": "1rem", "space-3xl": "3rem", "sidebar-collapsed": "4.5rem", "gutter-desktop": "1.5rem", "space-2xs": "0.125rem", "space-xl": "1.5rem", "sidebar-width": "16.25rem", "space-sm": "0.5rem", "space-2xl": "2rem", "space-lg": "1rem", "space-xs": "0.25rem", "space-md": "0.75rem" }, fontFamily: { "label-sm": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-xl": ["Plus Jakarta Sans"], "data-mono": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "label-md": ["Inter"], "body-sm": ["Inter"] }, fontSize: { "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "data-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="TUWSHIUAH Logo" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1VjBT7ubE1VtpmoJtNMNmBiZF9I8Q1skFEyE2FmskQsWyGIxBTc4Y9u5obDslFUBR1S3t_SCutQc54aQbKfUnHxuBxD59sLuXCki7RxT0idhAgXy1n7YYUuxRnEHHEl8ofLsNjgdrAPFlP99Fc7RyqBaRl7c253h3HDjt49Cdj_0oijWZSJ5LKI24_R3JDArWq_eLf5-7f5iFFbYg1LGQQK_-BXu0Ei1IYHjdbJTnFvDkeEh3dBE1VGJY3Z"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-primary-container truncate">TUWSHIUAH</span><span class="px-space-xs py-0.5 rounded bg-surface-container text-primary-container font-label-sm text-label-sm shrink-0">Workspace Privé</span></div><span class="font-label-sm text-label-sm text-on-surface-variant truncate">Dashboard Employé</span></div></div><div class="flex items-center gap-space-xs shrink-0"><a class="w-11 h-11 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors relative" data-path="notifications" href="#"><span class="material-symbols-outlined">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-on-tertiary-container"></span></a><div class="relative w-11 h-11 flex items-center justify-center shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPJCLfEENGgqwjFPoIP3RHGeX497KJBhnSQ4dP75ARM0zuO1SR-2sLaqWmKr_9xRzE-UnB-e7lppUJHwrwB-DKMSMb6nghcGlDsYiG54tE94qe9gmYAZiHK7_fkFwwLnkv6zjaDN0IfLtSLBuzRU6SWmlkz1zf1Iwkr8p1mQYNmby_iXZfDxEdnMgUP01tgOu4oRdUjLYYX6Y9vp1pEoE_cI9dE5SH_vJ5ap9LmDlYKJ58Z_P5uHYFgg"/><span class="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface"></span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full px-gutter-mobile gap-space-lg pb-6">
+<!-- Salutation & Profil Collaborateur -->
+<section class="flex items-center justify-between pt-space-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<h1 class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface">Bonjour Lucas</h1>
+<span class="inline-block animate-bounce text-headline-md">👋</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary truncate">
+        Ingénieur Deep Learning &amp; NLP • <span class="text-on-tertiary-container font-semibold">3 livrables</span> cette semaine
+      </p>
+</div>
+<div class="relative shrink-0 w-12 h-12 rounded-xl bg-surface-container-high p-1 shadow-sm flex items-center justify-center">
+<img class="w-10 h-10 rounded-lg object-cover" data-alt="Close-up portrait of Lucas, an AI engineer in his late twenties with subtle rim lighting in navy and warm orange reflections, looking confident in an ultra modern tech office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLFUmtgVBduZKwpT1DankUT6xH_putNWgDX3nN6f7SkzCSfyIdLWLZTm1LWiKqh1wAhj0jwbxRjflVKDoZRLrgULLMwFARwMuJeoeWjbvyf3su4C9gjb1Q7bXXNIMosVC8x7BYEMmRKCfQIcDvqplvCK-eLKdX52bAuObirh2JzuDhrzFRsmeJsZ3Pax4cwU_BA8ntlINNI1XJIseJmWFGDD7KsQxvp22Wvi9lifU6aS-_oH0x4n_RLQ"/>
+<span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-surface"></span>
+</div>
+</section>
+<!-- CTA Bannière Soumission Rapide -->
+<section class="relative overflow-hidden rounded-xl bg-primary-container p-space-lg text-on-primary shadow-md">
+<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-on-tertiary-container/15 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs text-secondary-fixed">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Livrable Validateur Officiel</span>
+</div>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest/10 px-2 py-0.5 rounded-full text-surface-dim">
+          Audit Direct
+        </span>
+</div>
+<div class="flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-primary">Validation Hiérarchique</h2>
+<p class="font-body-sm text-body-sm text-primary-fixed-dim">
+          Transmettez vos modèles, notebooks et rapports de sprint au Patron en un clic.
+        </p>
+</div>
+<div class="pt-space-xs flex items-center gap-space-sm">
+<button class="w-full h-10 bg-on-tertiary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>Soumettre un travail officiel</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Grille Récapitulative Personnelle (Bento 2x2 compact) -->
+<section class="grid grid-cols-2 gap-space-sm">
+<!-- Projets -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-xs">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm uppercase">Projets Assignés</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">folder_copy</span>
+</div>
+</div>
+<div class="flex items-baseline gap-space-2xs mt-space-xs">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface">3</span>
+<span class="font-label-sm text-label-sm text-secondary">actifs</span>
+</div>
+</div>
+<!-- Tâches -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-xs">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm uppercase">Tâches en cours</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">pending_actions</span>
+</div>
+</div>
+<div class="flex items-baseline gap-space-2xs mt-space-xs">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface">5</span>
+<span class="font-label-sm text-label-sm text-on-tertiary-container font-semibold">2 urgentes</span>
+</div>
+</div>
+<!-- Validations -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-xs">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm uppercase">Validations</span>
+<div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+</div>
+</div>
+<div class="flex items-baseline gap-space-2xs mt-space-xs">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-emerald-800">8</span>
+<span class="font-label-sm text-label-sm text-emerald-600 font-semibold">ce mois-ci</span>
+</div>
+</div>
+<!-- Échéance critique -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-xs">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm uppercase">Échéance critique</span>
+<div class="w-7 h-7 rounded-lg bg-amber-50 text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+</div>
+</div>
+<div class="flex items-baseline gap-space-2xs mt-space-xs">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface">2</span>
+<span class="font-label-sm text-label-sm text-error font-semibold">jours restants</span>
+</div>
+</div>
+</section>
+<!-- Message Prioritaire du Patron -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-secondary tracking-wide">Direction Générale</span>
+<span class="font-data-mono text-data-mono text-secondary">10:42</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-high flex flex-col gap-space-sm shadow-sm">
+<div class="flex items-start gap-space-sm">
+<div class="relative shrink-0">
+<img class="w-9 h-9 rounded-full object-cover" data-alt="Executive director portrait, elegant professional executive sitting at a minimalist high-tech walnut desk with subtle glass reflection, warm directional ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnB8-LrzApQulqNkPJbPdGprKfPsV6m6e_qy5NnWlvXmetrpKzZfK_0XcEXlb9H_hJRcf6Uh_QLQDhX26YKcGxMnpdhkUbmln8uliAQkRb6itVjrnyOxX5iAsh2dO31ZdQeeHQbGF8AwNcSEHiZSLfhRqjvfATw0LwX8jbI8JLqYRkb0LVdVA8A8RHx6b5a9juSNpGWhU68laTs8dKx492aA_k0OVTtQOUX_RBoGXIJP9mnV5GqAZngg"/>
+<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-on-tertiary-container ring-2 ring-surface-container-high"></span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Alexandre Roy (Patron)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary-container font-label-sm text-label-sm">Important</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-snug">
+            « Lucas, peux-tu vérifier le script de parsing avant 16h ? On a la démo investisseurs dans la foulée. »
+          </p>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-1">
+<button class="h-8 px-space-md rounded-lg bg-surface-container-lowest text-primary-container font-label-sm text-label-sm flex items-center gap-1 shadow-sm active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">reply</span>
+<span>Répondre</span>
+</button>
+<button class="h-8 px-space-md rounded-lg bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center gap-1 shadow-sm active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+<span>Ouvrir discussion</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Projets Actifs -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Mes Projets Actifs</h2>
+<span class="w-5 h-5 rounded-full bg-surface-container-high text-primary-container font-label-sm text-label-sm flex items-center justify-center">2</span>
+</div>
+<a class="font-label-sm text-label-sm text-on-tertiary-container flex items-center gap-0.5" href="#">
+        Voir tous <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<!-- Carte Projet 1 -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-md">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[22px]">neurology</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Plateforme NLP Client Alpha</span>
+<span class="font-body-sm text-body-sm text-secondary">Rôle : <strong class="text-on-surface">Lead Tech</strong></span>
+</div>
+</div>
+<span class="shrink-0 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+          En cours
+        </span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-secondary">Progression du Sprint</span>
+<span class="font-data-mono text-on-surface">75%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-on-tertiary-container rounded-full transition-all duration-500" style="width: 75%;"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-secondary font-label-sm text-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">event</span>
+<span>Échéance : <span class="text-on-surface font-medium">18 Nov</span></span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-label-sm font-bold text-primary-container ring-1 ring-surface-container-lowest">LM</div>
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center text-label-sm font-bold text-primary-container ring-1 ring-surface-container-lowest">AR</div>
+<div class="w-6 h-6 rounded-full bg-surface-dim flex items-center justify-center text-label-sm text-secondary ring-1 ring-surface-container-lowest">+2</div>
+</div>
+</div>
+</div>
+<!-- Carte Projet 2 -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-md">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[22px]">bar_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Dashboard Analytics BI</span>
+<span class="font-body-sm text-body-sm text-secondary">Rôle : <strong class="text-on-surface">Dev Backend</strong></span>
+</div>
+</div>
+<span class="shrink-0 px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">
+          Phase Spéc.
+        </span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-secondary">Progression du Sprint</span>
+<span class="font-data-mono text-on-surface">30%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary-container rounded-full transition-all duration-500" style="width: 30%;"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-secondary font-label-sm text-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">event</span>
+<span>Échéance : <span class="text-on-surface font-medium">28 Nov</span></span>
+</div>
+<span class="font-data-mono text-data-mono text-secondary">Milestone 1/4</span>
+</div>
+</div>
+</section>
+<!-- Travaux & Livrables récents -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Travaux &amp; Livrables Récents</h2>
+<span class="font-label-sm text-label-sm text-secondary">Audités</span>
+</div>
+<!-- Livrable 1 : Validé -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-emerald-600 text-[20px]">task_alt</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Pipeline Prétraitement Données</span>
+</div>
+<span class="shrink-0 font-data-mono text-data-mono text-secondary">Hier</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary pl-6">
+        Module d'embedding tokenisé et script de nettoyage regex v2.1.
+      </p>
+<div class="mt-2 pl-6 flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          ✓ Validé par le Patron
+        </span>
+<span class="text-label-sm font-label-sm text-secondary font-data-mono">Hash #3f9a</span>
+</div>
+</div>
+<!-- Livrable 2 : Modification Demandée -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm gap-space-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-on-tertiary-container text-[20px]">sync_problem</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Architecture API REST FastAPI</span>
+</div>
+<span class="shrink-0 font-data-mono text-data-mono text-secondary">Ce matin</span>
+</div>
+<!-- Note & Retour Patron -->
+<div class="ml-6 p-space-sm rounded-lg bg-surface-container-high flex flex-col gap-1">
+<div class="flex items-center gap-1 text-on-tertiary-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>↻ Modification demandée : Préciser le schéma OpenAPI</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          « Ajoute les codes erreurs HTTP 422 et le typing Pydantic strict pour le payload multimodal. »
+        </p>
+</div>
+<div class="ml-6 flex items-center justify-between pt-1">
+<span class="font-label-sm text-label-sm text-secondary">Version 1.0.4 soumise</span>
+<button class="h-7 px-space-sm bg-on-tertiary-container text-on-primary font-label-sm text-label-sm rounded-md shadow-sm active:scale-95 transition-transform flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">edit_document</span>
+<span>Corriger &amp; Reposter</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Fichiers Récents & Ressources Partagées -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Fichiers Partagés</h2>
+<button class="font-label-sm text-label-sm text-on-tertiary-container flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[16px]">upload_file</span> Ajouter
+      </button>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Fichier 1 : Python Script -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-data-mono text-data-mono font-bold shrink-0">
+            PY
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">tokenizer_model_v3.py</span>
+<span class="font-data-mono text-data-mono text-secondary">42 KB • Mis à jour il y a 2h</span>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+<!-- Fichier 2 : Document PDF -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-red-50 text-red-700 flex items-center justify-center font-data-mono text-data-mono font-bold shrink-0">
+            PDF
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Cahier_des_Charges_NLP.pdf</span>
+<span class="font-data-mono text-data-mono text-secondary">3.4 MB • Reçu du Client Alpha</span>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+<!-- Fichier 3 : Archive ZIP -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-data-mono text-data-mono font-bold shrink-0">
+            ZIP
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">weights_checkpoint_epoch12.zip</span>
+<span class="font-data-mono text-data-mono text-secondary">1.2 GB • Serveur Cluster GPU</span>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">cloud_sync</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Simple micro-interaction for livrable status cards
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // Feedback tactil visuel
+      btn.classList.add('opacity-80');
+      setTimeout(() => btn.classList.remove('opacity-80'), 150);
+    });
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/80 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-on-tertiary-container font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-secondary hover:text-primary transition-colors gap-space-2xs" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Tableau</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-secondary hover:text-primary transition-colors gap-space-2xs" data-path="projets" href="#"><span class="material-symbols-outlined text-[22px]">folder_open</span><span class="font-label-sm text-label-sm">Projets</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-secondary hover:text-primary transition-colors gap-space-2xs" data-path="fichiers" href="#"><span class="material-symbols-outlined text-[22px]">cloud</span><span class="font-label-sm text-label-sm">Fichiers</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-secondary hover:text-primary transition-colors gap-space-2xs relative" data-path="messages" href="#"><span class="material-symbols-outlined text-[22px]">chat_bubble</span><span class="font-label-sm text-label-sm">Messages</span><span class="absolute top-1 right-3.5 w-2 h-2 rounded-full bg-on-tertiary-container"></span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-14 text-secondary hover:text-primary transition-colors gap-space-2xs" data-path="equipe" href="#"><span class="material-symbols-outlined text-[22px]">groups</span><span class="font-label-sm text-label-sm">Équipe</span></a></div></nav></body></html>
