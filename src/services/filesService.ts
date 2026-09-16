@@ -244,7 +244,7 @@ export const GENERAL_WORKSPACE_PROJECT_ID = '00000000-0000-0000-0000-00000000000
  * Résout un identifiant de projet valide (UUID) dans Supabase.
  * Si le paramètre est non-UUID (ex: 'proj-1') ou non fourni, récupère l'espace général ou le premier projet accessible.
  */
-async function resolveProjectId(projectId?: string | null, userId?: string | null): Promise<string> {
+async function resolveProjectId(projectId?: string | null, _userId?: string | null): Promise<string> {
   if (projectId && isUUID(projectId)) {
     return projectId;
   }
@@ -279,36 +279,7 @@ async function resolveProjectId(projectId?: string | null, userId?: string | nul
     console.warn('[filesService] Notice recherche projets existants :', err);
   }
 
-  // 3. Si aucun projet n'existe en base, tenter d'en créer un par défaut pour les ressources partagées
-  const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-  if (!currentUserId) {
-    return GENERAL_WORKSPACE_PROJECT_ID;
-  }
-
-  try {
-    const { data: newProj, error: createProjErr } = await supabase
-      .from('projects')
-      .insert({
-        id: GENERAL_WORKSPACE_PROJECT_ID,
-        name: 'Espace Général TUWSHIUAH',
-        description: 'Espace collaboratif pour les ressources et fichiers partagés',
-        status: 'in_progress',
-        priority: 'medium',
-        created_by: currentUserId,
-      })
-      .select('id')
-      .maybeSingle();
-
-    if (!createProjErr && newProj?.id) {
-      return newProj.id;
-    }
-    if (createProjErr) {
-      console.warn('[filesService] Information création projet par défaut :', createProjErr.message);
-    }
-  } catch (err) {
-    console.warn('[filesService] Exception création projet par défaut :', err);
-  }
-
+  // 3. Si aucun projet n'existe, ne pas créer de projet fantôme automatiquement
   return GENERAL_WORKSPACE_PROJECT_ID;
 }
 

@@ -8,9 +8,11 @@ import { formatDate } from '../../lib/utils';
 
 interface ProjectCardProps {
   project: Project;
+  isAdmin?: boolean;
+  onDelete?: (project: Project) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isAdmin, onDelete }) => {
   const navigate = useNavigate();
 
   const isDelayed = project.status === 'DELAYED';
@@ -48,7 +50,22 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           </div>
         </div>
 
-        <StatusBadge status={project.status} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <StatusBadge status={project.status} />
+          {isAdmin && onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(project);
+              }}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-secondary hover:text-error hover:bg-error-container/20 transition-colors"
+              title="Supprimer ce projet"
+            >
+              <Icon name="delete" className="text-[15px]" />
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">

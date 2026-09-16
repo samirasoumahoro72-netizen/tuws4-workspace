@@ -770,13 +770,32 @@ export const projectService = {
 
     if (isSupabaseConfigured) {
       try {
-        await supabase.from('project_members').delete().eq('project_id', projectId);
+        // Nettoyer les éléments dépendants pour éviter les contraintes de clés étrangères
+        try {
+          const { data: subs } = await supabase.from('submissions').select('id').eq('project_id', projectId);
+          if (subs && subs.length > 0) {
+            const subIds = subs.map((s) => s.id);
+            await supabase.from('submission_files').delete().in('submission_id', subIds);
+            await supabase.from('submission_comments').delete().in('submission_id', subIds);
+            await supabase.from('submissions').delete().eq('project_id', projectId);
+          }
+        } catch {
+          // ignore
+        }
+
+        try {
+          await supabase.from('files').delete().eq('project_id', projectId);
+          await supabase.from('folders').delete().eq('project_id', projectId);
+          await supabase.from('messages').delete().eq('project_id', projectId);
+          await supabase.from('activities').delete().eq('project_id', projectId);
+          await supabase.from('project_members').delete().eq('project_id', projectId);
+        } catch {
+          // ignore
+        }
+
         const { error: deleteErr } = await supabase.from('projects').delete().eq('id', projectId);
-        if (deleteErr && deleteErr.code === '23503') {
-          return {
-            success: false,
-            error: 'Ce projet contient des éléments associés (fichiers ou livrables). Veuillez les détacher avant de supprimer le projet.',
-          };
+        if (deleteErr) {
+          console.warn('[projectService] Erreur suppression projet Supabase :', deleteErr.message);
         }
       } catch (err) {
         console.warn('[projectService] Exception deleteProject Supabase :', err);
@@ -786,6 +805,9 @@ export const projectService = {
     const local = getLocalProjects();
     const toDelete = local.find((p) => p.id === projectId);
     saveLocalProjects(local.filter((p) => p.id !== projectId));
+
+    // Notifier immédiatement les composants React
+    window.dispatchEvent(new CustomEvent('tuws_projects_updated'));
 
     if (currentUserId && toDelete) {
       activitiesService.logActivity({

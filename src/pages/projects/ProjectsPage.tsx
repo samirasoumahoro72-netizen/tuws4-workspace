@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '../../components/ui/Icon';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { ProjectCard } from '../../components/projects/ProjectCard';
 import { ProjectFormModal } from '../../components/projects/ProjectFormModal';
 import { projectService } from '../../services/projectService';
@@ -16,6 +17,8 @@ export const ProjectsPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { showToast } = useToast();
   const { user, isAdmin } = useAuth();
@@ -48,6 +51,25 @@ export const ProjectsPage: React.FC = () => {
   const handleProjectCreated = (newProj: Project) => {
     setProjects((prev) => [newProj, ...prev]);
     showToast(`Projet "${newProj.name || newProj.title}" créé avec succès !`, 'success');
+  };
+
+  const handleConfirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await projectService.deleteProject(projectToDelete.id, user?.id);
+      if (res.success) {
+        setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
+        showToast(`Projet "${projectToDelete.name || projectToDelete.title}" supprimé avec succès.`, 'success');
+      } else {
+        showToast(res.error || 'Impossible de supprimer ce projet.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Erreur lors de la suppression.', 'error');
+    } finally {
+      setIsDeleting(false);
+      setProjectToDelete(null);
+    }
   };
 
   const filters: { key: FilterType; label: string; count: number }[] = [
@@ -185,7 +207,12 @@ export const ProjectsPage: React.FC = () => {
       ) : filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              isAdmin={isAdmin}
+              onDelete={(p) => setProjectToDelete(p)}
+            />
           ))}
         </div>
       ) : projects.length === 0 ? (
@@ -232,6 +259,53 @@ export const ProjectsPage: React.FC = () => {
           currentUserId={user?.id || ''}
         />
       )}
+
+      {/* Modal confirmation suppression de projet (Admin) */}
+      <Modal
+        isOpen={!!projectToDelete}
+        onClose={() => setProjectToDelete(null)}
+        title="Supprimer ce projet ?"
+        maxWidth="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-error-container/20 border border-error/20 text-error">
+            <Icon name="warning" className="text-xl shrink-0 mt-0.5" />
+            <div className="flex flex-col text-xs leading-relaxed">
+              <span className="font-bold">Action irréversible</span>
+              <p className="text-on-surface-variant mt-0.5">
+                Êtes-vous certain de vouloir supprimer définitivement le projet{' '}
+                <strong className="text-on-surface font-bold">
+                  {projectToDelete?.name || projectToDelete?.title}
+                </strong>{' '}
+                ? Tous les fichiers et livrables associés seront retirés de l'espace.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setProjectToDelete(null)}
+              disabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              icon="delete"
+              isLoading={isDeleting}
+              disabled={isDeleting}
+              onClick={handleConfirmDeleteProject}
+            >
+              Supprimer définitivement
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

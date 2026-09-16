@@ -2,30 +2,8 @@
 -- TUWSHIUAH WORKSPACE - MIGRATION 002 : CORRECTION RLS & ESPACE GÉNÉRAL & SUPPRESSION DE COMPTE
 -- ==============================================================================
 
--- 1. CRÉATION DU PROJET PAR DÉFAUT "ESPACE GÉNÉRAL"
-INSERT INTO public.projects (
-  id,
-  name,
-  description,
-  status,
-  priority,
-  progress,
-  created_at,
-  updated_at
-)
-VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  'Espace Général TUWSHIUAH',
-  'Espace centralisé pour les ressources, fichiers et documents partagés de l''agence',
-  'in_progress',
-  'medium',
-  100,
-  now(),
-  now()
-)
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description;
+-- 1. SUPPRESSION DU PROJET FICTIF "ESPACE GÉNÉRAL" (Si présent en base)
+DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000001' OR name ILIKE '%Espace Général%';
 
 -- ==============================================================================
 -- 2. FONCTION DE VÉRIFICATION D'APPARTENANCE PROJET (AMÉLIORÉE)
@@ -98,6 +76,16 @@ USING (
   OR public.is_admin()
 )
 WITH CHECK (
+  created_by = auth.uid()
+  OR public.is_admin()
+);
+
+DROP POLICY IF EXISTS "projects_delete_creator_admin" ON public.projects;
+CREATE POLICY "projects_delete_creator_admin"
+ON public.projects
+FOR DELETE
+TO authenticated
+USING (
   created_by = auth.uid()
   OR public.is_admin()
 );
