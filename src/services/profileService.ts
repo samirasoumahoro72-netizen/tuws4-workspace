@@ -182,11 +182,17 @@ export const profileService = {
     email: string;
     password?: string;
     role: 'admin' | 'employee';
+    gender?: 'male' | 'female';
     job_title: string;
     phone?: string;
     avatar_url?: string;
   }): Promise<Profile> {
-    const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(memberData.full_name || 'tuws')}`;
+    const isFemale = memberData.gender === 'female';
+    const defaultAvatar = isFemale
+      ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&auto=format&fit=crop&q=80';
+
+    const selectedAvatar = memberData.avatar_url?.trim() || defaultAvatar;
 
     if (isSupabaseConfigured && memberData.password) {
       // 1. Inscription dans Supabase Auth via client isolé sans persistance de session
@@ -200,9 +206,10 @@ export const profileService = {
           data: {
             full_name: memberData.full_name.trim(),
             role: memberData.role,
+            gender: memberData.gender || (isFemale ? 'female' : 'male'),
             job_title: memberData.job_title.trim(),
             phone: memberData.phone?.trim() || '',
-            avatar_url: memberData.avatar_url?.trim() || defaultAvatar,
+            avatar_url: selectedAvatar,
           },
         },
       });
@@ -228,7 +235,7 @@ export const profileService = {
             role: memberData.role,
             job_title: memberData.job_title.trim(),
             phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
-            avatar_url: memberData.avatar_url?.trim() || defaultAvatar,
+            avatar_url: selectedAvatar,
             is_online: false,
           })
           .eq('id', userId)
@@ -238,6 +245,7 @@ export const profileService = {
         const finalProfile: Profile = updatedProfile && !profileError
           ? {
               ...updatedProfile,
+              gender: memberData.gender,
               role: updatedProfile.role?.toLowerCase() === 'admin' ? 'admin' : 'employee',
             }
           : {
@@ -246,9 +254,10 @@ export const profileService = {
               full_name: memberData.full_name.trim(),
               email: memberData.email.trim(),
               role: memberData.role,
+              gender: memberData.gender,
               job_title: memberData.job_title.trim(),
               phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
-              avatar_url: memberData.avatar_url?.trim() || defaultAvatar,
+              avatar_url: selectedAvatar,
               is_online: false,
               created_at: new Date().toISOString(),
             };
@@ -268,9 +277,10 @@ export const profileService = {
       full_name: memberData.full_name.trim(),
       email: memberData.email.trim(),
       role: memberData.role,
+      gender: memberData.gender,
       job_title: memberData.job_title.trim(),
       phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
-      avatar_url: memberData.avatar_url?.trim() || defaultAvatar,
+      avatar_url: selectedAvatar,
       is_online: true,
       created_at: new Date().toISOString(),
     };
@@ -288,11 +298,15 @@ export const profileService = {
     const sanitized: Partial<Profile> = { ...memberData };
     delete sanitized.id;
 
+    // Éviter l'erreur Postgres si la colonne 'gender' n'existe pas encore dans la table distante
+    const dbPayload = { ...sanitized };
+    delete (dbPayload as any).gender;
+
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .update(sanitized)
+          .update(dbPayload)
           .eq('id', memberId)
           .select()
           .single();
@@ -300,6 +314,7 @@ export const profileService = {
         if (data && !error) {
           const updated: Profile = {
             ...data,
+            gender: memberData.gender,
             role: (data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),
           };
           const current = getLocalProfiles();

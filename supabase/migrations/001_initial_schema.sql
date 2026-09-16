@@ -48,6 +48,8 @@ CREATE TABLE public.profiles (
   email TEXT UNIQUE,
   role TEXT NOT NULL DEFAULT 'employee'
     CHECK (role IN ('admin', 'employee')),
+  gender TEXT DEFAULT 'female'
+    CHECK (gender IN ('male', 'female')),
   avatar_url TEXT,
   job_title TEXT,
   phone TEXT,

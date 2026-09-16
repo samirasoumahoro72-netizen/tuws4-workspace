@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   email: string;
   role: UserRole;
+  gender?: 'male' | 'female';
   avatar_url?: string;
   job_title?: string;
   is_online?: boolean;

@@ -9,6 +9,73 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 
+export const AVATAR_PRESETS = {
+  female: [
+    {
+      id: 'f1',
+      label: 'Sarah',
+      url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'f2',
+      label: 'Amina',
+      url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'f3',
+      label: 'Julie',
+      url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'f4',
+      label: 'Claire',
+      url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'f5',
+      label: 'Inès',
+      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'f6',
+      label: 'Illustré',
+      url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Sarah',
+    },
+  ],
+  male: [
+    {
+      id: 'm1',
+      label: 'Alexandre',
+      url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'm2',
+      label: 'Lucas',
+      url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'm3',
+      label: 'Thomas',
+      url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'm4',
+      label: 'Marc',
+      url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'm5',
+      label: 'David',
+      url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=256&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'm6',
+      label: 'Illustré',
+      url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Thomas',
+    },
+  ],
+};
+
 interface MemberFormData {
   full_name: string;
   job_title: string;
@@ -16,6 +83,7 @@ interface MemberFormData {
   password?: string;
   phone: string;
   role: UserRole;
+  gender: 'female' | 'male';
   avatar_url: string;
 }
 
@@ -26,7 +94,8 @@ const initialFormData: MemberFormData = {
   password: '',
   phone: '+33 6 ',
   role: 'employee',
-  avatar_url: '',
+  gender: 'female',
+  avatar_url: AVATAR_PRESETS.female[0].url,
 };
 
 export const TeamPage: React.FC = () => {
@@ -79,10 +148,38 @@ export const TeamPage: React.FC = () => {
   };
 
   const handleRemovePhoto = () => {
-    setFormData((prev) => ({ ...prev, avatar_url: '' }));
+    setFormData((prev) => ({
+      ...prev,
+      avatar_url: AVATAR_PRESETS[prev.gender][0].url,
+    }));
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleGenderChange = (newGender: 'female' | 'male') => {
+    setFormData((prev) => {
+      const isCustomUpload = prev.avatar_url?.startsWith('data:image');
+      if (isCustomUpload) {
+        return { ...prev, gender: newGender };
+      }
+
+      // Si l'avatar actuel provient des presets de l'autre genre ou est vide, on bascule vers le premier preset du nouveau genre
+      const currentIsOtherPreset =
+        newGender === 'female'
+          ? AVATAR_PRESETS.male.some((p) => p.url === prev.avatar_url)
+          : AVATAR_PRESETS.female.some((p) => p.url === prev.avatar_url);
+
+      const nextAvatar = !prev.avatar_url || currentIsOtherPreset
+        ? AVATAR_PRESETS[newGender][0].url
+        : prev.avatar_url;
+
+      return {
+        ...prev,
+        gender: newGender,
+        avatar_url: nextAvatar,
+      };
+    });
   };
 
   // Charger les profils
@@ -131,13 +228,23 @@ export const TeamPage: React.FC = () => {
       return;
     }
     setEditingMember(member);
+
+    const isFemale =
+      member.gender === 'female' ||
+      AVATAR_PRESETS.female.some((p) => p.url === member.avatar_url) ||
+      (member.full_name && /sarah|julie|amina|inès|ines|marie|laura|claire|sophie|camille|emma|chloé|léa/i.test(member.full_name));
+
+    const gender: 'female' | 'male' = member.gender || (isFemale ? 'female' : 'male');
+    const avatar = member.avatar_url || AVATAR_PRESETS[gender][0].url;
+
     setFormData({
       full_name: member.full_name || '',
       job_title: member.job_title || '',
       email: member.email || '',
       phone: member.phone || '',
       role: member.role || 'employee',
-      avatar_url: member.avatar_url || '',
+      gender: gender,
+      avatar_url: avatar,
     });
     setIsFormModalOpen(true);
   };
@@ -196,6 +303,7 @@ export const TeamPage: React.FC = () => {
           email: formData.email,
           phone: formData.phone,
           role: formData.role,
+          gender: formData.gender,
           avatar_url: formData.avatar_url || undefined,
         });
 
@@ -212,6 +320,7 @@ export const TeamPage: React.FC = () => {
           password: formData.password,
           phone: formData.phone,
           role: formData.role,
+          gender: formData.gender,
           avatar_url: formData.avatar_url || undefined,
         });
 
@@ -653,21 +762,137 @@ export const TeamPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Photo de profil (Upload de photo) */}
+          {/* Civilité / Genre */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
+                <Icon name="wc" className="text-brand-orange text-[16px]" />
+                Civilité & Genre <span className="text-brand-orange">*</span>
+              </label>
+              <span className="text-[11px] text-secondary">
+                Adapte automatiquement les avatars proposés
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label
+                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                  formData.gender === 'female'
+                    ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
+                    : 'border-surface-container hover:bg-surface-container-low'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="member_gender"
+                  value="female"
+                  checked={formData.gender === 'female'}
+                  onChange={() => handleGenderChange('female')}
+                  className="accent-brand-orange"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👩</span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary-container">Femme</span>
+                    <span className="text-[10px] text-secondary">Avatars féminins professionnels</span>
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                  formData.gender === 'male'
+                    ? 'border-brand-orange bg-brand-orange/5 ring-1 ring-brand-orange/30 shadow-xs'
+                    : 'border-surface-container hover:bg-surface-container-low'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="member_gender"
+                  value="male"
+                  checked={formData.gender === 'male'}
+                  onChange={() => handleGenderChange('male')}
+                  className="accent-brand-orange"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👨</span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary-container">Homme</span>
+                    <span className="text-[10px] text-secondary">Avatars masculins professionnels</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Galerie d'Avatars Recommandés selon le genre */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
+                <Icon name="face" className="text-brand-orange text-[16px]" />
+                Avatars recommandés ({formData.gender === 'female' ? 'Femme' : 'Homme'})
+              </label>
+              <span className="text-[11px] text-secondary">
+                Cliquez pour choisir un style
+              </span>
+            </div>
+
+            <div className="grid grid-cols-6 gap-2 p-2.5 rounded-2xl bg-surface-container-low/80 border border-surface-container">
+              {AVATAR_PRESETS[formData.gender].map((preset) => {
+                const isSelected = formData.avatar_url === preset.url;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, avatar_url: preset.url }))}
+                    className={`relative flex flex-col items-center gap-1 p-1 rounded-xl transition-all group ${
+                      isSelected
+                        ? 'bg-white ring-2 ring-brand-orange shadow-xs scale-105'
+                        : 'hover:bg-white/60 hover:scale-102'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container ring-1 ring-surface-container relative">
+                      <img
+                        src={preset.url}
+                        alt={preset.label}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-brand-orange/20 flex items-center justify-center">
+                          <span className="w-4 h-4 rounded-full bg-brand-orange text-white flex items-center justify-center shadow-xs">
+                            <Icon name="check" className="text-[11px] font-bold" />
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] font-medium truncate max-w-full ${
+                        isSelected ? 'text-brand-orange font-bold' : 'text-secondary group-hover:text-primary-container'
+                      }`}
+                    >
+                      {preset.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Photo de profil personnalisée (ou aperçu actuel) */}
           <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-primary-container flex items-center gap-1.5">
                 <Icon name="photo_camera" className="text-brand-orange text-[16px]" />
-                Photo de profil
+                Photo sélectionnée / Personnalisée
               </label>
-              {formData.avatar_url && (
+              {formData.avatar_url && formData.avatar_url.startsWith('data:image') && (
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
                   className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1"
                 >
                   <Icon name="delete" className="text-[13px]" />
-                  Supprimer la photo
+                  Retirer la photo importée
                 </button>
               )}
             </div>
@@ -704,7 +929,7 @@ export const TeamPage: React.FC = () => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-orange text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 transition-opacity"
-                  title="Ajouter ou changer la photo"
+                  title="Ajouter ou changer la photo depuis vos fichiers"
                 >
                   <Icon name="add_a_photo" className="text-[12px]" />
                 </button>
@@ -712,7 +937,7 @@ export const TeamPage: React.FC = () => {
 
               {/* Bouton d'ajout et indications */}
               <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                <div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant="secondary"
@@ -721,11 +946,16 @@ export const TeamPage: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="shadow-xs"
                   >
-                    {formData.avatar_url ? 'Changer la photo' : 'Ajouter une photo'}
+                    {formData.avatar_url?.startsWith('data:image') ? 'Changer mon fichier' : 'Importer une photo depuis l\'ordinateur'}
                   </Button>
+                  {formData.avatar_url?.startsWith('data:image') && (
+                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Icon name="check_circle" className="text-[12px]" /> Photo personnalisée active
+                    </span>
+                  )}
                 </div>
                 <span className="text-[11px] text-secondary leading-snug">
-                  Format JPG, PNG ou WebP (max 5 Mo). Un avatar sera généré automatiquement si aucune photo n'est importée.
+                  Vous pouvez soit choisir l'un des avatars suggérés ci-dessus, soit importer votre propre fichier (JPG, PNG, WebP max 5 Mo).
                 </span>
               </div>
             </div>
