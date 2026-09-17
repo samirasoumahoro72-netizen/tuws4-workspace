@@ -127,19 +127,9 @@ export const DashboardPage: React.FC = () => {
         <div className="flex flex-col gap-1">
           {isAdmin ? (
             <>
-              <div className="flex items-center gap-2.5">
-                <h1 className="font-headline text-2xl font-bold text-primary-container tracking-tight">
-                  {isFemale ? 'Bonjour, Mme la Directrice' : 'Bonjour, M. le Directeur'}
-                </h1>
-                <Link
-                  to="/profile"
-                  title="Modifier votre civilité dans Mon Profil"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary hover:text-brand-orange px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors"
-                >
-                  <Icon name="tune" className="text-xs" />
-                  <span>Civilité</span>
-                </Link>
-              </div>
+              <h1 className="font-headline text-2xl font-bold text-primary-container tracking-tight">
+                {isFemale ? 'Bonjour, Mme la Directrice' : 'Bonjour, M. le Directeur'}
+              </h1>
               <p className="text-sm text-secondary">
                 Supervision globale et arbitrages opérationnels de l'agence.
               </p>
