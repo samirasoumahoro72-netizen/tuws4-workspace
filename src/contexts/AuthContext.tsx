@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { AuthContextType } from '../types/auth';
 import { Profile, UserRole } from '../types/database';
 import { authService } from '../services/authService';
-import { profileService } from '../services/profileService';
+import { profileService, isTestOrDemoAccount } from '../services/profileService';
 import { mockProfiles } from '../services/mockData';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,6 +52,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isSupabaseConfigured) {
           const { data, error } = await supabase.auth.getSession();
           if (data?.session && !error) {
+            // Si le compte connecté est un ancien compte de test ou démo purgé, forcer la déconnexion
+            if (isTestOrDemoAccount({ email: data.session.user.email, id: data.session.user.id })) {
+              try {
+                await supabase.auth.signOut();
+              } catch {}
+              localStorage.removeItem('tuwshiuah_workspace_session');
+              if (mounted) {
+                setUser(null);
+                setProfile(null);
+                setSession(null);
+                setLoading(false);
+              }
+              return;
+            }
+
             if (mounted) {
               setSession(data.session);
               setUser(data.session.user);
@@ -105,6 +120,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newSession?.user || null);
 
         if (newSession?.user) {
+          if (isTestOrDemoAccount({ email: newSession.user.email, id: newSession.user.id })) {
+            try {
+              await supabase.auth.signOut();
+            } catch {}
+            setProfile(null);
+            setUser(null);
+            setSession(null);
+            localStorage.removeItem('tuwshiuah_workspace_session');
+            setLoading(false);
+            return;
+          }
           await syncProfile(newSession.user.id, newSession.user.email);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);

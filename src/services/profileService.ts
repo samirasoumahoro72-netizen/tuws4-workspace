@@ -4,6 +4,23 @@ import { mockProfiles } from './mockData';
 
 const TEAM_PROFILES_KEY = 'tuws_team_profiles_v1';
 
+export const PURGED_EMAILS = [
+  'fatimbamba@gmail.com',
+  'nouraadiatou@gmail.com',
+  'lucas.m@tuwshiuah.com',
+  'thomas.l@tuwshiuah.com',
+  'sarah.b@tuwshiuah.com',
+  'julie.v@tuwshiuah.com',
+];
+
+export const isTestOrDemoAccount = (p: Partial<Profile>): boolean => {
+  const email = (p.email || '').trim().toLowerCase();
+  const id = (p.id || '').trim();
+  if (PURGED_EMAILS.some((pe) => email.includes(pe))) return true;
+  if (/^user-(lucas|thomas|sarah|julie)/i.test(id)) return true;
+  return false;
+};
+
 const getLocalProfiles = (): Profile[] => {
   const raw = localStorage.getItem(TEAM_PROFILES_KEY);
   if (!raw) {
@@ -11,14 +28,20 @@ const getLocalProfiles = (): Profile[] => {
     return [...mockProfiles];
   }
   try {
-    return JSON.parse(raw);
+    const list: Profile[] = JSON.parse(raw);
+    const filtered = list.filter((p) => !isTestOrDemoAccount(p));
+    if (filtered.length !== list.length) {
+      localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(filtered));
+    }
+    return filtered.length > 0 ? filtered : [...mockProfiles];
   } catch {
     return [...mockProfiles];
   }
 };
 
 const saveLocalProfiles = (profiles: Profile[]) => {
-  localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(profiles));
+  const sanitized = profiles.filter((p) => !isTestOrDemoAccount(p));
+  localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(sanitized));
 };
 
 export const getBossProfile = (): Profile => {
@@ -26,7 +49,7 @@ export const getBossProfile = (): Profile => {
     const rawBoss = localStorage.getItem('tuws_boss_profile');
     if (rawBoss) {
       const parsed = JSON.parse(rawBoss);
-      if (parsed && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+      if (parsed && !isTestOrDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
         return {
           ...parsed,
           role: 'admin',
@@ -36,7 +59,7 @@ export const getBossProfile = (): Profile => {
     const rawSess = localStorage.getItem('tuwshiuah_workspace_session');
     if (rawSess) {
       const parsed = JSON.parse(rawSess);
-      if (parsed && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+      if (parsed && !isTestOrDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
         return {
           ...parsed,
           role: 'admin',
@@ -47,7 +70,7 @@ export const getBossProfile = (): Profile => {
 
   const local = getLocalProfiles();
   const foundAdmin = local.find(
-    (p) => p.role === 'admin' || p.email?.includes('direction') || p.email?.includes('samira')
+    (p) => !isTestOrDemoAccount(p) && (p.role === 'admin' || p.email?.includes('direction') || p.email?.includes('samira'))
   );
   if (foundAdmin) {
     return { ...foundAdmin, role: 'admin' };
@@ -72,7 +95,22 @@ export const profileService = {
         if (!error && data) {
           const isExplicitProd = import.meta.env.VITE_DEMO_MODE === 'false';
           if (data.length > 0 || isExplicitProd) {
-            let formatted: Profile[] = data.map((p) => {
+            // Nettoyage et suppression automatique dans Supabase des comptes démo / tests créés
+            const validRows = data.filter((p) => {
+              if (isTestOrDemoAccount(p)) {
+                // Tenter de purger de la base distante en tâche de fond
+                (async () => {
+                  try {
+                    await supabase.rpc('delete_user_account', { target_user_id: p.id });
+                    await supabase.from('profiles').delete().eq('id', p.id);
+                  } catch {}
+                })();
+                return false;
+              }
+              return true;
+            });
+
+            let formatted: Profile[] = validRows.map((p) => {
               const isSamiraOrDir =
                 p.email?.toLowerCase().includes('samira') ||
                 p.email?.toLowerCase().includes('direction') ||
@@ -109,7 +147,7 @@ export const profileService = {
       }
     }
 
-    const localList = getLocalProfiles();
+    const localList = getLocalProfiles().filter((p) => !isTestOrDemoAccount(p));
     const hasAdminLocal = localList.some((p) => (p.role || '').toLowerCase() === 'admin');
     const fullList = hasAdminLocal ? localList : [getBossProfile(), ...localList];
     return fullList.sort((a, b) => {
@@ -126,6 +164,7 @@ export const profileService = {
    */
   async getProfile(userId: string): Promise<Profile | null> {
     if (!userId) return null;
+    if (isTestOrDemoAccount({ id: userId, email: userId })) return null;
 
     if (isSupabaseConfigured) {
       try {
