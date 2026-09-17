@@ -62,10 +62,6 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const previewGreeting = isAdmin
-    ? (gender === 'female' ? 'Bonjour, Mme la Directrice' : 'Bonjour, M. le Directeur')
-    : (gender === 'female' ? `Bonjour, Madame ${fullName.split(' ')[0] || ''}` : `Bonjour, Monsieur ${fullName.split(' ')[0] || ''}`);
-
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
@@ -73,7 +69,7 @@ export const ProfilePage: React.FC = () => {
           Mon Profil
         </h1>
         <p className="text-sm text-secondary mt-0.5">
-          Informations personnelles, civilité et préférences de salutation au sein de TUWSHIUAH.
+          Informations personnelles et fiche au sein de TUWSHIUAH Workspace.
         </p>
       </div>
 
@@ -112,85 +108,6 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section Civilité / Salutation */}
-          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container flex flex-col gap-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <label className="text-xs font-bold text-primary-container uppercase tracking-wider flex items-center gap-1.5">
-                  <Icon name="badge" className="text-brand-orange text-base" />
-                  <span>Civilité & Formule de Salutation</span>
-                </label>
-                <p className="text-xs text-secondary mt-0.5">
-                  Définit si vous êtes accueilli(e) par « Bonjour, Madame » ou « Bonjour, Monsieur ».
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-brand-orange/30 shadow-xs text-xs font-bold text-primary-container">
-                <span className="w-2 h-2 rounded-full bg-brand-orange animate-pulse" />
-                <span>Aperçu : <em>« {previewGreeting} »</em></span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setGender('female')}
-                className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer ${
-                  gender === 'female'
-                    ? 'border-brand-orange bg-white shadow-sm ring-2 ring-brand-orange/20 text-primary-container'
-                    : 'border-surface-container bg-surface-container-lowest text-secondary hover:border-surface-container-high'
-                }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${
-                    gender === 'female' ? 'bg-brand-orange/15 text-brand-orange' : 'bg-surface-container text-secondary'
-                  }`}
-                >
-                  👩
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-primary-container">Madame</span>
-                    {gender === 'female' && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-brand-orange text-white font-bold">Actif</span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-secondary truncate mt-0.5">
-                    {isAdmin ? '« Bonjour, Mme la Directrice »' : '« Bonjour, Madame »'}
-                  </span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setGender('male')}
-                className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer ${
-                  gender === 'male'
-                    ? 'border-brand-orange bg-white shadow-sm ring-2 ring-brand-orange/20 text-primary-container'
-                    : 'border-surface-container bg-surface-container-lowest text-secondary hover:border-surface-container-high'
-                }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${
-                    gender === 'male' ? 'bg-brand-orange/15 text-brand-orange' : 'bg-surface-container text-secondary'
-                  }`}
-                >
-                  👨
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-primary-container">Monsieur</span>
-                    {gender === 'male' && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-brand-orange text-white font-bold">Actif</span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-secondary truncate mt-0.5">
-                    {isAdmin ? '« Bonjour, M. le Directeur »' : '« Bonjour, Monsieur »'}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-secondary uppercase tracking-wider">
@@ -202,6 +119,37 @@ export const ProfilePage: React.FC = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-surface-container text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
               />
+            </div>
+
+            {/* Genre : Femme ou Homme */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-secondary uppercase tracking-wider">
+                Genre
+              </label>
+              <div className="grid grid-cols-2 gap-2 h-[42px]">
+                <button
+                  type="button"
+                  onClick={() => setGender('female')}
+                  className={`h-full px-4 rounded-xl border flex items-center justify-center gap-2 text-sm font-semibold transition-all cursor-pointer ${
+                    gender === 'female'
+                      ? 'bg-brand-orange text-white border-brand-orange shadow-xs font-bold'
+                      : 'bg-surface-container-low text-secondary border-surface-container hover:bg-surface-container hover:text-primary-container'
+                  }`}
+                >
+                  <span>Femme</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGender('male')}
+                  className={`h-full px-4 rounded-xl border flex items-center justify-center gap-2 text-sm font-semibold transition-all cursor-pointer ${
+                    gender === 'male'
+                      ? 'bg-brand-orange text-white border-brand-orange shadow-xs font-bold'
+                      : 'bg-surface-container-low text-secondary border-surface-container hover:bg-surface-container hover:text-primary-container'
+                  }`}
+                >
+                  <span>Homme</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -218,18 +166,6 @@ export const ProfilePage: React.FC = () => {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-secondary uppercase tracking-wider">
-                Adresse Email (Workspace)
-              </label>
-              <input
-                type="email"
-                value={profile?.email || user?.email || ''}
-                disabled
-                className="px-3.5 py-2.5 rounded-xl bg-surface-container border border-surface-container text-sm text-secondary cursor-not-allowed"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-secondary uppercase tracking-wider">
                 Téléphone
               </label>
               <input
@@ -237,6 +173,18 @@ export const ProfilePage: React.FC = () => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-surface-container text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-secondary uppercase tracking-wider">
+                Adresse Email (Workspace)
+              </label>
+              <input
+                type="email"
+                value={profile?.email || user?.email || ''}
+                disabled
+                className="px-3.5 py-2.5 rounded-xl bg-surface-container border border-surface-container text-sm text-secondary cursor-not-allowed"
               />
             </div>
           </div>
