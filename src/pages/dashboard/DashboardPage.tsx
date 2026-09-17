@@ -236,11 +236,16 @@ export const DashboardPage: React.FC = () => {
             <div className="text-xs text-secondary truncate mt-0.5">
               {isAdmin
                 ? `${totalAdmins} Direction • ${stats.totalEmployees} ${stats.totalEmployees > 1 ? 'Collaborateurs' : 'Collaborateur'}`
-                : 'actifs'}
+                : stats.totalProjects > 0
+                ? `${stats.totalProjects} ${stats.totalProjects > 1 ? 'actifs' : 'actif'}`
+                : '0 actif'}
             </div>
           </div>
           <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-            <div className="bg-primary-container h-full w-full rounded-full" />
+            <div
+              className="bg-primary-container h-full rounded-full transition-all"
+              style={{ width: (isAdmin ? totalMembers : stats.totalProjects) > 0 ? '100%' : '0%' }}
+            />
           </div>
         </div>
 
@@ -261,13 +266,17 @@ export const DashboardPage: React.FC = () => {
             <div className="text-xs text-secondary truncate mt-0.5">
               {isAdmin
                 ? `${stats.inProgressProjects} en cours • ${stats.delayedProjects} retard`
-                : '2 urgentes'}
+                : stats.inProgressProjects > 0
+                ? `${stats.inProgressProjects} ${stats.inProgressProjects > 1 ? 'urgentes' : 'urgente'}`
+                : '0 urgente'}
             </div>
           </div>
           <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
-            <div className="bg-on-tertiary-container h-full w-4/6 rounded-l-full" />
-            <div className="bg-error h-full w-1/6" />
-            <div className="bg-emerald-500 h-full w-1/6 rounded-r-full" />
+            {stats.inProgressProjects > 0 ? (
+              <div className="bg-on-tertiary-container h-full w-full rounded-full" />
+            ) : (
+              <div className="bg-surface-container h-full w-full rounded-full" />
+            )}
           </div>
         </div>
 
@@ -293,11 +302,18 @@ export const DashboardPage: React.FC = () => {
               )}
             </div>
             <div className="text-xs text-secondary truncate mt-0.5">
-              {isAdmin ? 'Livrables soumis' : 'ce mois-ci'}
+              {isAdmin
+                ? 'Livrables soumis'
+                : stats.completedProjects > 0
+                ? `${stats.completedProjects} ce mois-ci`
+                : '0 ce mois-ci'}
             </div>
           </div>
           <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-            <div className="bg-on-tertiary-container h-full w-3/4 rounded-full" />
+            <div
+              className="bg-on-tertiary-container h-full rounded-full transition-all"
+              style={{ width: (isAdmin ? stats.pendingSubmissionsCount : stats.completedProjects) > 0 ? '100%' : '0%' }}
+            />
           </div>
         </div>
       </div>
