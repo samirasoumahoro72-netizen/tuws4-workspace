@@ -171,7 +171,7 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="hidden md:inline text-secondary font-medium">Rôle :</span>
             <span className="font-bold text-on-tertiary-container">
-              {isAdmin ? 'Direction (Admin)' : 'Collaborateur'}
+              {isAdmin ? 'Direction (Admin)' : (profile?.job_title || (user as any)?.user_metadata?.job_title || 'Collaborateur')}
             </span>
           </div>
         )}
@@ -302,7 +302,11 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
               <img
                 alt={profile?.full_name || 'Profile'}
                 className="w-8 h-8 rounded-full object-cover"
-                src={profile?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnB8-LrzApQulqNkPJbPdGprKfPsV6m6e_qy5NnWlvXmetrpKzZfK_0XcEXlb9H_hJRcf6Uh_QLQDhX26YKcGxMnpdhkUbmln8uliAQkRb6itVjrnyOxX5iAsh2dO31ZdQeeHQbGF8AwNcSEHiZSLfhRqjvfATw0LwX8jbI8JLqYRkb0LVdVA8A8RHx6b5a9juSNpGWhU68laTs8dKx492aA_k0OVTtQOUX_RBoGXIJP9mnV5GqAZngg'}
+                src={
+                  profile?.avatar_url ||
+                  (user as any)?.user_metadata?.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile?.full_name || user?.email || 'user')}`
+                }
               />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface"></span>
             </button>
@@ -314,12 +318,12 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
               >
                 <div className="p-2 border-b border-surface-container">
                   <div className="font-headline text-xs font-bold text-primary-container truncate">
-                    {profile?.full_name || user?.email}
+                    {profile?.full_name || (user as any)?.user_metadata?.full_name || user?.email}
                   </div>
                   <div className="text-[11px] text-secondary truncate">{profile?.email || user?.email}</div>
                   <div className="mt-1">
                     <span className="inline-block px-1.5 py-0.5 rounded bg-surface-container text-[10px] font-semibold text-primary-container">
-                      {isAdmin ? 'Direction Générale' : 'Collaborateur'}
+                      {isAdmin ? 'Direction Générale' : (profile?.job_title || (user as any)?.user_metadata?.job_title || 'Collaborateur')}
                     </span>
                   </div>
                 </div>

@@ -648,7 +648,7 @@ export const TeamPage: React.FC = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+33 6 12 34 56 78"
+                    placeholder="Ex: +225 07 00 00 00 00 / +33 6..."
                     className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-on-surface focus:outline-none focus:border-brand-orange focus:bg-white transition-all"
                   />
                 </div>

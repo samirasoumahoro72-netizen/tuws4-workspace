@@ -139,20 +139,35 @@ export const DashboardPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-headline text-2xl font-bold text-on-surface tracking-tight">
-                    {isFemale ? 'Bonjour, Mme' : 'Bonjour, M.'} {(profile?.full_name || (user as any)?.user_metadata?.full_name || user?.email || 'Collaborateur').split(' ')[0]}
+                    {isFemale ? 'Bonjour, Mme' : 'Bonjour, M.'} {profile?.full_name || (user as any)?.user_metadata?.full_name || user?.email || 'Collaborateur'}
                   </h1>
                 </div>
-                <p className="text-sm text-secondary">
-                  {profile?.job_title || 'Collaborateur'} •{' '}
-                  <span className="text-on-tertiary-container font-semibold">
-                    {stats.pendingSubmissionsCount > 0 ? `${stats.pendingSubmissionsCount} livrables` : 'Workspace'}
-                  </span>{' '}
-                  cette semaine
+                <p className="text-sm text-secondary flex items-center flex-wrap gap-x-2 gap-y-1">
+                  <span className="font-semibold text-primary-container">
+                    {profile?.job_title || (user as any)?.user_metadata?.job_title || 'Collaborateur'}
+                  </span>
+                  {(profile?.phone || (user as any)?.user_metadata?.phone) && (
+                    <>
+                      <span className="opacity-40">•</span>
+                      <span>{profile?.phone || (user as any)?.user_metadata?.phone}</span>
+                    </>
+                  )}
+                  <span className="opacity-40">•</span>
+                  <span>
+                    <span className="text-on-tertiary-container font-semibold">
+                      {stats.pendingSubmissionsCount > 0 ? `${stats.pendingSubmissionsCount} livrables` : 'Workspace'}
+                    </span>{' '}
+                    cette semaine
+                  </span>
                 </p>
               </div>
               <div className="relative shrink-0 w-12 h-12 rounded-xl bg-surface-container-high p-1 shadow-sm flex items-center justify-center">
                 <img
-                  src={profile?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnB8-LrzApQulqNkPJbPdGprKfPsV6m6e_qy5NnWlvXmetrpKzZfK_0XcEXlb9H_hJRcf6Uh_QLQDhX26YKcGxMnpdhkUbmln8uliAQkRb6itVjrnyOxX5iAsh2dO31ZdQeeHQbGF8AwNcSEHiZSLfhRqjvfATw0LwX8jbI8JLqYRkb0LVdVA8A8RHx6b5a9juSNpGWhU68laTs8dKx492aA_k0OVTtQOUX_RBoGXIJP9mnV5GqAZngg'}
+                  src={
+                    profile?.avatar_url ||
+                    (user as any)?.user_metadata?.avatar_url ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile?.full_name || user?.email || 'collaborateur')}`
+                  }
                   alt={profile?.full_name || 'Collaborateur'}
                   className="w-10 h-10 rounded-lg object-cover"
                 />
@@ -415,7 +430,15 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <div className="relative shrink-0">
                 <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnB8-LrzApQulqNkPJbPdGprKfPsV6m6e_qy5NnWlvXmetrpKzZfK_0XcEXlb9H_hJRcf6Uh_QLQDhX26YKcGxMnpdhkUbmln8uliAQkRb6itVjrnyOxX5iAsh2dO31ZdQeeHQbGF8AwNcSEHiZSLfhRqjvfATw0LwX8jbI8JLqYRkb0LVdVA8A8RHx6b5a9juSNpGWhU68laTs8dKx492aA_k0OVTtQOUX_RBoGXIJP9mnV5GqAZngg"
+                  src={
+                    (() => {
+                      try {
+                        const boss = localStorage.getItem('tuws_boss_profile');
+                        if (boss) return JSON.parse(boss)?.avatar_url;
+                      } catch {}
+                      return null;
+                    })() || 'https://api.dicebear.com/7.x/avataaars/svg?seed=SamiraSoumahoro&top=bob,bun,longButNotTooLong&facialHairProbability=0'
+                  }
                   alt="Direction"
                   className="w-9 h-9 rounded-full object-cover"
                 />

@@ -18,8 +18,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Synchronise le profil correspondant à l'ID utilisateur
   const syncProfile = async (userId: string, emailFallback?: string): Promise<Profile | null> => {
     try {
-      const p = await profileService.getProfile(userId);
+      let p = await profileService.getProfile(userId);
       if (p) {
+        // Fusionner avec les métadonnées auth courantes pour combler toute lacune
+        if (isSupabaseConfigured) {
+          try {
+            const { data } = await supabase.auth.getUser();
+            if (data?.user && data.user.id === userId && data.user.user_metadata) {
+              const meta = data.user.user_metadata;
+              if ((!p.full_name || p.full_name === p.email?.split('@')[0]) && meta.full_name) {
+                p.full_name = meta.full_name;
+              }
+              if ((!p.job_title || p.job_title === 'Collaborateur') && meta.job_title) {
+                p.job_title = meta.job_title;
+              }
+              if ((!p.phone || p.phone === '+33 6 00 00 00 00' || p.phone === '+33 6 12 34 56 78') && meta.phone) {
+                p.phone = meta.phone;
+              }
+              if (!p.gender && meta.gender) {
+                p.gender = meta.gender;
+              }
+              if (!p.avatar_url && meta.avatar_url) {
+                p.avatar_url = meta.avatar_url;
+              }
+            }
+          } catch {}
+        }
+
         setProfile(p);
         if (p.role === 'admin') {
           try {
@@ -33,9 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (emailFallback) {
-      const fallback = mockProfiles.find((m) => m.email.toLowerCase() === emailFallback.toLowerCase()) || mockProfiles[0];
-      setProfile(fallback);
-      return fallback;
+      const fallback = mockProfiles.find((m) => m.email.toLowerCase() === emailFallback.toLowerCase());
+      if (fallback) {
+        setProfile(fallback);
+        return fallback;
+      }
     }
 
     setProfile(null);

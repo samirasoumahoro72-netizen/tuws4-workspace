@@ -157,20 +157,36 @@ export const profileService = {
 
     if (isSupabaseConfigured) {
       try {
+        const { data: authData } = await supabase.auth.getUser();
+        const currentUser = authData?.user && authData.user.id === userId ? authData.user : null;
+        const meta = currentUser?.user_metadata || {};
+
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, user_id, full_name, email, role, avatar_url, job_title, phone, is_online, created_at')
+          .select('*')
           .or(`id.eq.${userId},user_id.eq.${userId}`)
           .maybeSingle();
 
         if (data && !error) {
+          const userEmail = data.email || currentUser?.email || '';
           const isSamiraOrDir =
-            data.email?.toLowerCase().includes('samira') ||
-            data.email?.toLowerCase().includes('direction') ||
+            userEmail.toLowerCase().includes('samira') ||
+            userEmail.toLowerCase().includes('direction') ||
             (data.job_title?.toLowerCase().includes('direct') && !data.job_title?.toLowerCase().includes('sous'));
           const role = isSamiraOrDir || data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee';
+
+          const resolvedPhone =
+            data.phone && data.phone !== '+33 6 00 00 00 00' && data.phone !== '+33 6 12 34 56 78'
+              ? data.phone
+              : (meta.phone && meta.phone !== '+33 6 00 00 00 00' && meta.phone !== '+33 6 12 34 56 78' ? meta.phone : (data.phone || ''));
+
           const prof: Profile = {
             ...data,
+            full_name: data.full_name || meta.full_name || '',
+            job_title: data.job_title || meta.job_title || (role === 'admin' ? 'Direction Générale' : 'Collaborateur'),
+            phone: resolvedPhone,
+            gender: data.gender || meta.gender || (data.avatar_url?.includes('top=bob') || data.avatar_url?.includes('facialHairProbability=0') ? 'female' : undefined),
+            avatar_url: data.avatar_url || meta.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(data.full_name || meta.full_name || userEmail || 'user')}`,
             role,
           };
           if (role === 'admin') {
@@ -182,21 +198,28 @@ export const profileService = {
         }
 
         // Si la ligne n'existe pas encore dans public.profiles mais l'utilisateur est authentifié
-        const { data: authData } = await supabase.auth.getUser();
-        if (authData?.user && authData.user.id === userId) {
-          const userEmail = authData.user.email || '';
+        if (currentUser) {
+          const userEmail = currentUser.email || '';
           const isSamiraOrDir =
             userEmail.toLowerCase().includes('samira') ||
             userEmail.toLowerCase().includes('direction');
-          const assignedRole: 'admin' | 'employee' = isSamiraOrDir ? 'admin' : 'employee';
+          const assignedRole: 'admin' | 'employee' = (meta.role === 'admin' || isSamiraOrDir) ? 'admin' : 'employee';
+
+          const isFemale = meta.gender === 'female';
+          const seed = encodeURIComponent(meta.full_name || userEmail.split('@')[0]);
+          const defaultAvatar = meta.avatar_url || (isFemale
+            ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&top=bob,bun,curly,curvy,dreads,longButNotTooLong,miaWallace,straight02,straight01,straightAndStrand&facialHairProbability=0`
+            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&top=shortCurly,shortFlat,shortRound,shortWaved,sides,theCaesar,theCaesarAndSidePart`);
 
           const newProfile: Profile = {
             id: userId,
-            full_name: authData.user.user_metadata?.full_name || (isSamiraOrDir ? 'Samira Soumahoro' : userEmail.split('@')[0]),
+            full_name: meta.full_name || (isSamiraOrDir ? 'Samira Soumahoro' : userEmail.split('@')[0]),
             email: userEmail,
             role: assignedRole,
-            avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userEmail)}`,
-            job_title: assignedRole === 'admin' ? 'Direction Générale' : 'Collaborateur',
+            gender: meta.gender,
+            avatar_url: defaultAvatar,
+            job_title: meta.job_title || (assignedRole === 'admin' ? 'Direction Générale' : 'Collaborateur'),
+            phone: meta.phone || '',
             is_online: true,
             created_at: new Date().toISOString(),
           };
@@ -215,6 +238,8 @@ export const profileService = {
               role: assignedRole,
               avatar_url: newProfile.avatar_url,
               job_title: newProfile.job_title,
+              phone: newProfile.phone,
+              gender: newProfile.gender,
             });
           } catch {
             // ignoré
@@ -232,7 +257,7 @@ export const profileService = {
     const found = local.find(
       (p) => p.id === userId || p.user_id === userId || p.email.toLowerCase() === userId.toLowerCase()
     );
-    return found || local[0] || null;
+    return found || null;
   },
 
   /**
@@ -245,13 +270,16 @@ export const profileService = {
 
     if (isSupabaseConfigured) {
       try {
-        // Mettre à jour les métadonnées de l'utilisateur dans Supabase Auth
-        if (sanitizedUpdates.gender || sanitizedUpdates.full_name) {
+        // Mettre à jour l'ensemble des métadonnées de l'utilisateur dans Supabase Auth
+        if (sanitizedUpdates.gender || sanitizedUpdates.full_name || sanitizedUpdates.job_title || sanitizedUpdates.phone || sanitizedUpdates.avatar_url) {
           try {
             await supabase.auth.updateUser({
               data: {
                 ...(sanitizedUpdates.gender ? { gender: sanitizedUpdates.gender } : {}),
                 ...(sanitizedUpdates.full_name ? { full_name: sanitizedUpdates.full_name } : {}),
+                ...(sanitizedUpdates.job_title ? { job_title: sanitizedUpdates.job_title } : {}),
+                ...(sanitizedUpdates.phone !== undefined ? { phone: sanitizedUpdates.phone } : {}),
+                ...(sanitizedUpdates.avatar_url ? { avatar_url: sanitizedUpdates.avatar_url } : {}),
               },
             });
           } catch {
@@ -280,74 +308,50 @@ export const profileService = {
         }
 
         if (data && !error) {
-          const isBoss =
-            data.role?.toLowerCase() === 'admin' ||
+          const isSamiraOrDir =
             data.email?.toLowerCase().includes('samira') ||
             data.email?.toLowerCase().includes('direction') ||
             (data.job_title?.toLowerCase().includes('direct') && !data.job_title?.toLowerCase().includes('sous'));
-          const updated: Profile = {
+          const finalProfile: Profile = {
             ...data,
             gender: sanitizedUpdates.gender || data.gender,
-            role: (isBoss ? 'admin' : 'employee'),
+            role: isSamiraOrDir || data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee',
           };
+
           const current = getLocalProfiles();
-          const idx = current.findIndex((p) => p.id === userId);
+          const idx = current.findIndex((p) => p.id === userId || p.user_id === userId);
           if (idx !== -1) {
-            current[idx] = updated;
+            current[idx] = finalProfile;
             saveLocalProfiles(current);
           }
-          try {
-            const sessRaw = localStorage.getItem('tuwshiuah_workspace_session');
-            if (sessRaw) {
-              const sess = JSON.parse(sessRaw);
-              localStorage.setItem('tuwshiuah_workspace_session', JSON.stringify({ ...sess, ...updated }));
-            }
-            if (isBoss) {
-              localStorage.setItem('tuws_boss_profile', JSON.stringify(updated));
-            }
-          } catch {
-            // ignoré
-          }
-          return updated;
+          return finalProfile;
         }
       } catch (err) {
-        console.warn('[profileService] Erreur lors de la mise à jour Supabase :', err);
+        console.warn('[profileService] Erreur lors de la mise à jour du profil Supabase :', err);
       }
     }
 
+    // Repli local
     const current = getLocalProfiles();
-    const idx = current.findIndex((p) => p.id === userId);
+    const idx = current.findIndex((p) => p.id === userId || p.user_id === userId);
     if (idx !== -1) {
       const updated = { ...current[idx], ...sanitizedUpdates };
       current[idx] = updated;
       saveLocalProfiles(current);
-      try {
-        const sessRaw = localStorage.getItem('tuwshiuah_workspace_session');
-        if (sessRaw) {
-          const sess = JSON.parse(sessRaw);
-          localStorage.setItem('tuwshiuah_workspace_session', JSON.stringify({ ...sess, ...updated }));
-        }
-      } catch {
-        // ignoré
-      }
       return updated;
     }
     return null;
   },
 
   /**
-   * [ADMIN] Ajout d'un nouveau collaborateur
-   */
-  /**
-   * [ADMIN] Inscription et création complète d'un compte collaborateur
-   * avec identifiants Supabase Auth (email + mot de passe) et informations personnelles.
+   * [ADMIN] Inscription complète d'un nouveau collaborateur
    */
   async addMember(memberData: {
     full_name: string;
     email: string;
     password?: string;
     role: 'admin' | 'employee';
-    gender?: 'male' | 'female';
+    gender?: 'female' | 'male';
     job_title: string;
     phone?: string;
     avatar_url?: string;
@@ -394,19 +398,47 @@ export const profileService = {
         const userId = authData.user.id;
 
         // 2. Mise à jour de la fiche profil avec toutes les informations personnelles
-        const { data: updatedProfile, error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: memberData.full_name.trim(),
-            role: memberData.role,
-            job_title: memberData.job_title.trim(),
-            phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
-            avatar_url: selectedAvatar,
-            is_online: false,
-          })
-          .eq('id', userId)
-          .select()
-          .single();
+        let updatedProfile: any = null;
+        let profileError: any = null;
+
+        try {
+          const res = await supabase
+            .from('profiles')
+            .update({
+              full_name: memberData.full_name.trim(),
+              role: memberData.role,
+              gender: memberData.gender,
+              job_title: memberData.job_title.trim(),
+              phone: memberData.phone?.trim() || '',
+              avatar_url: selectedAvatar,
+              is_online: false,
+            })
+            .eq('id', userId)
+            .select()
+            .single();
+          updatedProfile = res.data;
+          profileError = res.error;
+
+          if (profileError && profileError.message?.toLowerCase().includes('gender')) {
+            const retryRes = await supabase
+              .from('profiles')
+              .update({
+                full_name: memberData.full_name.trim(),
+                role: memberData.role,
+                job_title: memberData.job_title.trim(),
+                phone: memberData.phone?.trim() || '',
+                avatar_url: selectedAvatar,
+                is_online: false,
+              })
+              .eq('id', userId)
+              .select()
+              .single();
+            updatedProfile = retryRes.data;
+            profileError = retryRes.error;
+          }
+        } catch (upErr) {
+          profileError = upErr;
+        }
 
         const finalProfile: Profile = updatedProfile && !profileError
           ? {
@@ -422,7 +454,7 @@ export const profileService = {
               role: memberData.role,
               gender: memberData.gender,
               job_title: memberData.job_title.trim(),
-              phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
+              phone: memberData.phone?.trim() || '',
               avatar_url: selectedAvatar,
               is_online: false,
               created_at: new Date().toISOString(),
@@ -445,7 +477,7 @@ export const profileService = {
       role: memberData.role,
       gender: memberData.gender,
       job_title: memberData.job_title.trim(),
-      phone: memberData.phone?.trim() || '+33 6 00 00 00 00',
+      phone: memberData.phone?.trim() || '',
       avatar_url: selectedAvatar,
       is_online: true,
       created_at: new Date().toISOString(),
@@ -457,7 +489,6 @@ export const profileService = {
     return newProfile;
   },
 
-  /**
   /**
    * [ADMIN] Modification des informations d'un collaborateur
    */
@@ -521,6 +552,7 @@ export const profileService = {
 
       if (updatedFromDb) {
         const updated: Profile = {
+          ...memberData,
           ...updatedFromDb,
           gender: memberData.gender,
           role: (updatedFromDb.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),

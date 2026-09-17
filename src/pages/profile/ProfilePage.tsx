@@ -11,29 +11,39 @@ export const ProfilePage: React.FC = () => {
 
   const isFemaleDefault =
     profile?.gender === 'female' ||
+    ((user as any)?.user_metadata?.gender === 'female') ||
     (profile?.gender === undefined && (
-      (profile?.full_name && /samira|sarah|julie|amina|inès|ines|marie|laura|claire|sophie|camille|emma|chloé|léa|noura/i.test(profile.full_name)) ||
+      (profile?.full_name && /samira|sarah|julie|amina|inès|ines|marie|laura|claire|sophie|camille|emma|chloé|léa|noura|fatim/i.test(profile.full_name)) ||
       (user?.email && /samira/i.test(user.email))
     ));
 
-  const [fullName, setFullName] = useState(profile?.full_name || '');
-  const [jobTitle, setJobTitle] = useState(profile?.job_title || '');
-  const [phone, setPhone] = useState(profile?.phone || '+33 6 12 34 56 78');
+  const getCleanPhone = (p?: string | null, metaPhone?: string | null) => {
+    if (p && p !== '+33 6 12 34 56 78' && p !== '+33 6 00 00 00 00') return p;
+    if (metaPhone && metaPhone !== '+33 6 12 34 56 78' && metaPhone !== '+33 6 00 00 00 00') return metaPhone;
+    return '';
+  };
+
+  const userMeta = (user as any)?.user_metadata || {};
+
+  const [fullName, setFullName] = useState(profile?.full_name || userMeta.full_name || '');
+  const [jobTitle, setJobTitle] = useState(profile?.job_title || userMeta.job_title || '');
+  const [phone, setPhone] = useState(getCleanPhone(profile?.phone, userMeta.phone));
   const [gender, setGender] = useState<'female' | 'male'>(
-    profile?.gender || (isFemaleDefault ? 'female' : 'male')
+    profile?.gender || userMeta.gender || (isFemaleDefault ? 'female' : 'male')
   );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setJobTitle(profile.job_title || '');
-      setPhone(profile.phone || '+33 6 12 34 56 78');
-      if (profile.gender) {
-        setGender(profile.gender);
+    if (profile || user) {
+      const uMeta = (user as any)?.user_metadata || {};
+      setFullName(profile?.full_name || uMeta.full_name || '');
+      setJobTitle(profile?.job_title || uMeta.job_title || '');
+      setPhone(getCleanPhone(profile?.phone, uMeta.phone));
+      if (profile?.gender || uMeta.gender) {
+        setGender(profile?.gender || uMeta.gender);
       }
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +91,8 @@ export const ProfilePage: React.FC = () => {
               <img
                 src={
                   profile?.avatar_url ||
-                  (gender === 'female'
-                    ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Directrice&top=bun,longButNotTooLong&facialHairProbability=0'
-                    : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Directeur&top=shortCurly,theCaesar')
+                  userMeta.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName || profile?.full_name || user?.email || 'user')}&${gender === 'female' ? 'top=bob,bun,curly,curvy,dreads,longButNotTooLong,miaWallace,straight02,straight01,straightAndStrand&facialHairProbability=0' : 'top=shortCurly,shortFlat,shortRound,shortWaved,sides,theCaesar,theCaesarAndSidePart'}`
                 }
                 alt={profile?.full_name || 'Profil'}
                 className="w-20 h-20 rounded-full object-cover ring-4 ring-surface-container shadow-md"
@@ -92,17 +101,17 @@ export const ProfilePage: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <h2 className="text-lg font-bold text-primary-container">
-                {profile?.full_name || user?.email}
+                {profile?.full_name || userMeta.full_name || user?.email}
               </h2>
               <span className="text-xs text-secondary font-medium">
-                {profile?.job_title || (isAdmin ? 'Direction Générale' : 'Collaborateur')}
+                {profile?.job_title || userMeta.job_title || (isAdmin ? 'Direction Générale' : 'Collaborateur')}
               </span>
               <span className="text-xs text-brand-orange font-bold mt-1 flex items-center gap-1.5">
                 <Icon name={isAdmin ? 'crown' : 'briefcase'} className="text-[12px]" />
                 <span>
                   {isAdmin
                     ? (gender === 'female' ? 'Directrice Générale (Admin)' : 'Directeur Général (Admin)')
-                    : 'Collaborateur'}
+                    : (profile?.job_title || userMeta.job_title || 'Collaborateur')}
                 </span>
               </span>
             </div>
