@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Icon } from '../ui/Icon';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { filesService } from '../../services/filesService';
 
 export const Sidebar: React.FC = () => {
   const { isAdmin, user } = useAuth();
@@ -11,22 +12,30 @@ export const Sidebar: React.FC = () => {
     submissions: 0,
     messages: 0,
     team: 0,
+    files: 0,
   });
 
   useEffect(() => {
     let mounted = true;
 
     const fetchCounts = async () => {
+      let fileCount = 0;
+      try {
+        const fileList = await filesService.getAllFiles();
+        fileCount = fileList.length;
+      } catch {}
+
       if (!isSupabaseConfigured) {
-        if (mounted) setCounts({ projects: 0, submissions: 0, messages: 0, team: 0 });
+        if (mounted) setCounts({ projects: 0, submissions: 0, messages: 0, team: 0, files: fileCount });
         return;
       }
 
       try {
-        const [projRes, subRes, profRes] = await Promise.all([
+        const [projRes, subRes, profRes, fileRes] = await Promise.all([
           supabase.from('projects').select('id', { count: 'exact', head: true }),
           supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'PENDING'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('files').select('id', { count: 'exact', head: true }),
         ]);
 
         if (mounted) {
@@ -35,11 +44,12 @@ export const Sidebar: React.FC = () => {
             submissions: subRes.count ?? 0,
             messages: 0,
             team: profRes.count ?? 0,
+            files: fileRes.count ?? fileCount,
           });
         }
       } catch {
         if (mounted) {
-          setCounts({ projects: 0, submissions: 0, messages: 0, team: 0 });
+          setCounts({ projects: 0, submissions: 0, messages: 0, team: 0, files: fileCount });
         }
       }
     };
@@ -49,11 +59,13 @@ export const Sidebar: React.FC = () => {
     const handleRefresh = () => fetchCounts();
     window.addEventListener('tuws_projects_updated', handleRefresh);
     window.addEventListener('tuws_submissions_updated', handleRefresh);
+    window.addEventListener('tuws_files_updated', handleRefresh);
 
     return () => {
       mounted = false;
       window.removeEventListener('tuws_projects_updated', handleRefresh);
       window.removeEventListener('tuws_submissions_updated', handleRefresh);
+      window.removeEventListener('tuws_files_updated', handleRefresh);
     };
   }, [user]);
 
@@ -80,6 +92,7 @@ export const Sidebar: React.FC = () => {
       to: '/files',
       label: 'Fichiers & Docs',
       icon: 'cloud',
+      badge: String(counts.files),
     },
     {
       to: '/messages',

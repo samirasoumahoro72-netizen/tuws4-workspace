@@ -5,8 +5,8 @@ import { activitiesService } from './activitiesService';
 import { validateUploadFile, sanitizeFileName } from '../lib/security';
 
 // Clés pour le fallback local (DEMO / DÉVELOPPEMENT)
-const FOLDERS_KEY = 'tuws_folders_store_v1';
-const FILES_KEY = 'tuws_files_store_v1';
+const FOLDERS_KEY = 'tuws_folders_store_v2';
+const FILES_KEY = 'tuws_files_store_v2';
 
 // Détermination stricte du mode DEMO vs PRODUCTION
 const isExplicitDemo = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -711,17 +711,8 @@ export const filesService = {
       }));
     }
 
-    let localFiles = getLocalFiles();
-    if (projectId) {
-      localFiles = localFiles.filter((f) => f.project_id === projectId);
-    }
-    if (folderId !== undefined) {
-      localFiles = localFiles.filter((f) => (folderId === null ? !f.folder_id : f.folder_id === folderId));
-    }
-    const existingIds = new Set(supabaseFiles.map((f) => f.id));
-    const extraLocal = localFiles.filter((f) => !existingIds.has(f.id));
-
-    return [...supabaseFiles, ...extraLocal];
+    // En mode Supabase connecté, on retourne strictement les fichiers réels de la base de données
+    return supabaseFiles;
   },
 
   /**

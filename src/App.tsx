@@ -53,8 +53,8 @@ export const App: React.FC = () => {
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Fallback : toute URL inconnue redirige vers /login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </ToastProvider>
       </AuthProvider>

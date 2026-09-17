@@ -82,7 +82,8 @@ export const LoginPage: React.FC = () => {
         setFailedAttempts(0);
         setLockoutUntil(0);
         showToast('Connexion réussie à TUWSHIUAH Workspace', 'verified');
-        navigate(destination, { replace: true });
+        const targetDestination = !destination || destination === '/' || destination === '/login' ? '/dashboard' : destination;
+        navigate(targetDestination, { replace: true });
       }
     } catch (err: any) {
       const msg = err?.message || 'Erreur inattendue lors de la connexion.';

@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
-        const isExplicitProd = import.meta.env.VITE_DEMO_MODE === 'false';
+        const isExplicitProd = import.meta.env.VITE_DEMO_MODE === 'false' || import.meta.env.PROD;
 
         if (isSupabaseConfigured) {
           const { data, error } = await supabase.auth.getSession();
@@ -57,43 +57,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Si le mode production est actif, ne pas injecter de faux profils de démonstration
-        if (isExplicitProd) {
-          if (mounted) {
+        // Si aucun compte n'est authentifié : ne JAMAIS auto-connecter un visiteur !
+        // En mode démo local, restaurer UNIQUEMENT si l'utilisateur s'est déjà connecté manuellement
+        if (!isExplicitProd) {
+          const demoUser = authService.getLocalDemoUser();
+          if (demoUser && mounted) {
+            const fakeUser: User = {
+              id: demoUser.id,
+              app_metadata: {},
+              user_metadata: { full_name: demoUser.full_name, avatar_url: demoUser.avatar_url },
+              aud: 'authenticated',
+              created_at: new Date().toISOString(),
+              email: demoUser.email,
+            };
+            setUser(fakeUser);
+            setProfile(demoUser);
+          } else if (mounted) {
             setUser(null);
             setProfile(null);
             setSession(null);
           }
-          if (mounted) setLoading(false);
-          return;
-        }
-
-        // Mode démo / fallback local si Supabase non configuré ou hors-ligne
-        const demoUser = authService.getLocalDemoUser();
-        if (demoUser && mounted) {
-          const fakeUser: User = {
-            id: demoUser.id,
-            app_metadata: {},
-            user_metadata: { full_name: demoUser.full_name, avatar_url: demoUser.avatar_url },
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-            email: demoUser.email,
-          };
-          setUser(fakeUser);
-          setProfile(demoUser);
-        } else if (!isSupabaseConfigured && mounted) {
-          // Premier accès en démo : initialiser avec le profil Direction par défaut
-          const defaultAdmin = mockProfiles[0];
-          const fakeUser: User = {
-            id: defaultAdmin.id,
-            app_metadata: {},
-            user_metadata: { full_name: defaultAdmin.full_name, avatar_url: defaultAdmin.avatar_url },
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-            email: defaultAdmin.email,
-          };
-          setUser(fakeUser);
-          setProfile(defaultAdmin);
+        } else if (mounted) {
+          setUser(null);
+          setProfile(null);
+          setSession(null);
         }
       } catch (err) {
         console.warn('[AuthProvider] Erreur lors de l’initialisation auth :', err);

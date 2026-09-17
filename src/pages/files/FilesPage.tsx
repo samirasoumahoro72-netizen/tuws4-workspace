@@ -144,7 +144,7 @@ export const FilesPage: React.FC = () => {
     });
 
   // Calcul du stockage réel
-  const totalFilesBytes = files.reduce((acc, f) => acc + (f.size_bytes || 0), 2400000000);
+  const totalFilesBytes = files.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -197,7 +197,7 @@ export const FilesPage: React.FC = () => {
       </div>
 
       {/* Jauge de stockage */}
-      <StorageGauge totalFilesBytes={totalFilesBytes} />
+      <StorageGauge files={files} totalFilesBytes={totalFilesBytes} />
 
       {/* Actions Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
