@@ -635,9 +635,10 @@ export const messagesService = {
 
     // 3. Notification des destinataires (Direct ou Projet)
     const isDirect = isDirectChannel(discussionId);
-    const notificationSnippet = trimmed || `a partagé ${attachments?.length || 1} fichier(s)`;
+    const hasFiles = attachments && attachments.length > 0;
+    const firstFileName = hasFiles ? attachments[0].name : '';
     const snippetFormatted =
-      notificationSnippet.length > 80 ? `${notificationSnippet.substring(0, 80)}...` : notificationSnippet;
+      trimmed.length > 80 ? `${trimmed.substring(0, 80)}...` : trimmed;
 
     if (isDirect) {
       // Notification pour message direct 1-à-1
@@ -648,13 +649,21 @@ export const messagesService = {
       }
 
       if (targetUserId && targetUserId !== sender.id) {
+        const notifTitle = hasFiles
+          ? `Nouveau fichier de ${sender.full_name || 'un collaborateur'}`
+          : `Nouveau message de ${sender.full_name || 'un collaborateur'}`;
+
+        const notifMessage = hasFiles
+          ? (trimmed ? `« ${firstFileName} » : ${snippetFormatted}` : `Vous a envoyé le fichier « ${firstFileName} »`)
+          : (snippetFormatted || 'Vous a envoyé un message');
+
         notificationsService
           .addNotification({
             user_id: targetUserId,
             sender_id: sender.id,
-            title: `Message direct de ${sender.full_name || 'un collaborateur'}`,
-            message: snippetFormatted,
-            type: 'MESSAGE',
+            title: notifTitle,
+            message: notifMessage,
+            type: hasFiles ? 'FILE' : 'MESSAGE',
             link: `/messages?contact=${sender.id}`,
           })
           .catch((err) => console.warn('[messagesService] Notification direct message non envoyée :', err));
@@ -677,24 +686,37 @@ export const messagesService = {
             }
           }
 
+          // Inclure le créateur du projet
+          if (project?.created_by) {
+            memberUserIds.push(project.created_by);
+          }
+
           // Repli sur les membres associés au projet si vide
-          if (memberUserIds.length === 0 && project?.members) {
-            memberUserIds = project.members.map((m) => m.id || (m as any).user_id);
+          if (project?.members) {
+            memberUserIds.push(...project.members.map((m) => m.id || (m as any).user_id));
           }
 
           // Déduplication et exclusion stricte de l'auteur du message
           const uniqueRecipients = Array.from(new Set(memberUserIds)).filter(
-            (uid) => uid && uid !== sender.id
+            (uid) => uid && uid !== sender.id && uid !== (sender as any).user_id
           );
+
+          const notifTitle = hasFiles
+            ? `${sender.full_name || 'Un collaborateur'} a partagé un fichier`
+            : `${sender.full_name || 'Un collaborateur'} dans ${projectName}`;
+
+          const notifMessage = hasFiles
+            ? (trimmed ? `Projet ${projectName} : « ${firstFileName} » - ${snippetFormatted}` : `Projet ${projectName} : a partagé le fichier « ${firstFileName} »`)
+            : `Projet ${projectName} : ${snippetFormatted}`;
 
           for (const recipientId of uniqueRecipients) {
             notificationsService
               .addNotification({
                 user_id: recipientId,
                 sender_id: sender.id,
-                title: `${sender.full_name || 'Un collaborateur'} a écrit dans ${projectName}`,
-                message: `Projet ${projectName} : ${snippetFormatted}`,
-                type: 'MESSAGE',
+                title: notifTitle,
+                message: notifMessage,
+                type: hasFiles ? 'FILE' : 'MESSAGE',
                 link: `/messages?project=${discussionId}`,
               })
               .catch((err) => console.warn('[messagesService] Notification projet non envoyée :', err));

@@ -159,7 +159,7 @@ export interface Notification {
   user_id: string;
   title: string;
   message: string;
-  type: 'SUBMISSION' | 'VALIDATION' | 'MESSAGE' | 'PROJECT' | 'SYSTEM';
+  type: 'SUBMISSION' | 'VALIDATION' | 'MESSAGE' | 'PROJECT' | 'SYSTEM' | 'FILE';
   link?: string;
   is_read: boolean;
   created_at: string;

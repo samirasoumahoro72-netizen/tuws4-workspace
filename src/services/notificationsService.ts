@@ -18,10 +18,10 @@ const getStoredLocalNotifications = (): Notification[] => {
   }
 };
 
-const saveLocalNotifications = (notifications: Notification[]) => {
+const saveLocalNotifications = (notifications: Notification[], newNotif?: Notification) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(notifications));
-  window.dispatchEvent(new CustomEvent('tuws_notifications_updated'));
+  window.dispatchEvent(new CustomEvent('tuws_notifications_updated', { detail: { newNotif } }));
 };
 
 export const notificationsService = {
@@ -222,7 +222,7 @@ export const notificationsService = {
 
     // 2. Sauvegarde persistante locale
     all.unshift(newNotif);
-    saveLocalNotifications(all);
+    saveLocalNotifications(all, newNotif);
 
     return newNotif;
   },
@@ -234,17 +234,24 @@ export const notificationsService = {
    * - Heartbeat réactif léger (polling doux 5s)
    * - Canal Realtime Supabase postgres_changes si configuré
    */
-  subscribeToNotifications(userId?: string | null, onUpdate: () => void = () => {}): () => void {
+  subscribeToNotifications(
+    userId?: string | null,
+    onUpdate: (latestNotif?: Notification) => void = () => {}
+  ): () => void {
     if (!userId) return () => {};
 
-    const handleEvent = () => onUpdate();
+    const handleEvent = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ newNotif?: Notification }>;
+      const notif = customEvent?.detail?.newNotif;
+      onUpdate(notif);
+    };
 
     // 1. Événements réactifs du navigateur
     window.addEventListener('tuws_notifications_updated', handleEvent);
-    window.addEventListener('storage', handleEvent);
+    window.addEventListener('storage', () => onUpdate());
 
     // 2. Polling doux
-    const intervalId = setInterval(onUpdate, 5000);
+    const intervalId = setInterval(() => onUpdate(), 5000);
 
     // 3. Supabase Realtime si configuré
     let realtimeChannel: any = null;
@@ -255,7 +262,19 @@ export const notificationsService = {
           .on(
             'postgres_changes',
             {
-              event: '*',
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload: any) => {
+              onUpdate(payload?.new as Notification);
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
               schema: 'public',
               table: 'notifications',
               filter: `user_id=eq.${userId}`,
@@ -273,7 +292,7 @@ export const notificationsService = {
     // Nettoyage
     return () => {
       window.removeEventListener('tuws_notifications_updated', handleEvent);
-      window.removeEventListener('storage', handleEvent);
+      window.removeEventListener('storage', () => onUpdate());
       clearInterval(intervalId);
       if (realtimeChannel && isSupabaseConfigured) {
         supabase.removeChannel(realtimeChannel);

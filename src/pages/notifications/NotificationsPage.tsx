@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { formatRelativeTime } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
 
-type FilterTab = 'ALL' | 'UNREAD' | 'MESSAGE' | 'PROJECT';
+type FilterTab = 'ALL' | 'UNREAD' | 'MESSAGE' | 'FILE' | 'PROJECT';
 
 export const NotificationsPage: React.FC = () => {
   const { user } = useAuth();
@@ -76,6 +76,7 @@ export const NotificationsPage: React.FC = () => {
     MESSAGE: 'chat_bubble',
     PROJECT: 'rocket_launch',
     SYSTEM: 'info',
+    FILE: 'folder_shared',
   };
 
   const typeColors: Record<string, string> = {
@@ -84,6 +85,7 @@ export const NotificationsPage: React.FC = () => {
     MESSAGE: 'bg-primary-container',
     PROJECT: 'bg-blue-600',
     SYSTEM: 'bg-slate-600',
+    FILE: 'bg-brand-orange',
   };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -91,6 +93,7 @@ export const NotificationsPage: React.FC = () => {
   const filteredNotifications = notifications.filter((notif) => {
     if (activeTab === 'UNREAD') return !notif.is_read;
     if (activeTab === 'MESSAGE') return notif.type === 'MESSAGE';
+    if (activeTab === 'FILE') return notif.type === 'FILE';
     if (activeTab === 'PROJECT') return notif.type === 'PROJECT';
     return true;
   });
@@ -169,6 +172,18 @@ export const NotificationsPage: React.FC = () => {
         >
           <Icon name="chat_bubble" className="text-sm" />
           <span>Messages</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('FILE')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+            activeTab === 'FILE'
+              ? 'bg-primary-container text-white shadow-sm'
+              : 'text-secondary hover:text-on-surface hover:bg-surface-container-low'
+          }`}
+        >
+          <Icon name="folder_shared" className="text-sm" />
+          <span>Fichiers</span>
         </button>
 
         <button

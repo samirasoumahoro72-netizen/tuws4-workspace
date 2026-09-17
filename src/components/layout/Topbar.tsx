@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import { Logo } from '../ui/Logo';
 import { Icon } from '../ui/Icon';
 import { Notification } from '../../types/database';
@@ -18,12 +19,15 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
   const isDemoMode = isExplicitDemo || (!isExplicitProd && !isSupabaseConfigured);
 
   const { user, profile, isAdmin, signOut, availableProfiles, switchUser } = useAuth();
+  const { showToast } = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
   const notifMenuRef = useRef<HTMLDivElement>(null);
+  const seenNotifIdsRef = useRef<Set<string>>(new Set());
+  const isFirstLoadRef = useRef<boolean>(true);
   const navigate = useNavigate();
 
   const loadNotificationsData = useCallback(async () => {
@@ -35,6 +39,12 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
       ]);
       setUnreadCount(count);
       setRecentNotifications(notifs.slice(0, 10));
+
+      // Sur le premier chargement, marquer les notifications existantes comme déjà vues
+      if (isFirstLoadRef.current) {
+        notifs.forEach((n) => seenNotifIdsRef.current.add(n.id));
+        isFirstLoadRef.current = false;
+      }
     } catch (err) {
       console.error('Erreur chargement notifications Topbar:', err);
     }
@@ -43,8 +53,22 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
   useEffect(() => {
     loadNotificationsData();
 
-    const unsubscribe = notificationsService.subscribeToNotifications(user?.id, () => {
+    const unsubscribe = notificationsService.subscribeToNotifications(user?.id, (newNotif) => {
       loadNotificationsData();
+
+      // Afficher un toast d'alerte en temps réel si une nouvelle notification arrive pour l'utilisateur
+      if (newNotif && newNotif.user_id === user?.id && !newNotif.is_read) {
+        if (!seenNotifIdsRef.current.has(newNotif.id)) {
+          seenNotifIdsRef.current.add(newNotif.id);
+          const icon =
+            newNotif.type === 'FILE'
+              ? 'folder_shared'
+              : newNotif.type === 'MESSAGE'
+              ? 'chat_bubble'
+              : 'notifications';
+          showToast(`${newNotif.title} : ${newNotif.message}`, icon, 'info');
+        }
+      }
     });
 
     const handleClickOutside = (e: MouseEvent) => {
@@ -59,7 +83,7 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
       unsubscribe();
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [user?.id, loadNotificationsData]);
+  }, [user?.id, loadNotificationsData, showToast]);
 
   const handleMarkAllRead = async () => {
     if (!user?.id) return;
@@ -232,6 +256,8 @@ export const Topbar: React.FC<TopbarProps> = ({ pageTitle = 'Dashboard' }) => {
                           ? 'verified'
                           : n.type === 'SUBMISSION'
                           ? 'rule_folder'
+                          : n.type === 'FILE'
+                          ? 'folder_shared'
                           : 'chat_bubble';
 
                       return (

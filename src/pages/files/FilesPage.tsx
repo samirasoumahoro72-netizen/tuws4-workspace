@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Icon } from '../../components/ui/Icon';
 import { Button } from '../../components/ui/Button';
 import { StorageGauge } from '../../components/files/StorageGauge';
@@ -19,6 +20,7 @@ type FileTab = 'private' | 'shared';
 export const FilesPage: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [currentTab, setCurrentTab] = useState<FileTab>('private');
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -64,6 +66,29 @@ export const FilesPage: React.FC = () => {
       unsubscribe();
     };
   }, [loadData]);
+
+  // Prise en charge des liens de notification (?tab=shared et ?highlight=fileId)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const highlightId = searchParams.get('highlight');
+
+    if (tabParam === 'shared') {
+      setCurrentTab('shared');
+    }
+
+    if (highlightId && files.length > 0) {
+      const targetFile = files.find((f) => f.id === highlightId);
+      if (targetFile) {
+        if (targetFile.uploaded_by !== user?.id) {
+          setCurrentTab('shared');
+        }
+        setPreviewingFile(targetFile);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('highlight');
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [searchParams, files, user?.id, setSearchParams]);
 
   // Fermer le menu d'options dossier au clic extérieur
   useEffect(() => {

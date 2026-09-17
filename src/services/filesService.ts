@@ -2,6 +2,9 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { FileItem, Folder, Profile } from '../types/database';
 import { mockFiles, mockFolders, mockProfiles } from './mockData';
 import { activitiesService } from './activitiesService';
+import { notificationsService } from './notificationsService';
+import { profileService } from './profileService';
+import { projectService } from './projectService';
 import { validateUploadFile, sanitizeFileName } from '../lib/security';
 
 // Clés pour le fallback local (DEMO / DÉVELOPPEMENT)
@@ -782,6 +785,7 @@ export const filesService = {
    */
   async shareFile(fileId: string, targetUserIds: string[], currentUserId: string): Promise<boolean> {
     const localShares = getLocalFileShares();
+    const previousTargets = localShares[fileId] || [];
     const cleanTargets = Array.from(new Set(targetUserIds.filter(Boolean)));
 
     // 1. Sauvegarder dans le store local pour cohérence immédiate
@@ -791,19 +795,27 @@ export const filesService = {
     // Mettre à jour aussi dans localFiles si présent
     const localFiles = getLocalFiles();
     const fIdx = localFiles.findIndex((f) => f.id === fileId);
+    let targetFileName = 'Document';
     if (fIdx !== -1) {
       localFiles[fIdx].shared_with = cleanTargets;
       saveLocalFiles(localFiles);
+      targetFileName = localFiles[fIdx].name;
     }
 
     // 2. Si Supabase est connecté, persister dans public.files
     if (isSupabaseConfigured && isUUID(fileId)) {
       try {
-        await supabase
+        const { data: dbFile } = await supabase
           .from('files')
           .update({ shared_with: cleanTargets })
           .eq('id', fileId)
-          .eq('uploaded_by', currentUserId);
+          .eq('uploaded_by', currentUserId)
+          .select('name')
+          .maybeSingle();
+
+        if (dbFile?.name) {
+          targetFileName = dbFile.name;
+        }
       } catch (err) {
         console.warn('[filesService] Notice update shared_with dans Supabase :', err);
       }
@@ -823,6 +835,38 @@ export const filesService = {
             : `a rendu son fichier privé`,
       },
     }).catch(console.warn);
+
+    // 4. Notifier individuellement chaque nouveau destinataire du fichier
+    const newRecipients = cleanTargets.filter(
+      (recipientId) => recipientId && recipientId !== currentUserId && !previousTargets.includes(recipientId)
+    );
+
+    if (newRecipients.length > 0) {
+      (async () => {
+        try {
+          let senderName = 'Un collaborateur';
+          const senderProfile = await profileService.getProfile(currentUserId);
+          if (senderProfile?.full_name) {
+            senderName = senderProfile.full_name;
+          }
+
+          for (const recipientId of newRecipients) {
+            notificationsService
+              .addNotification({
+                user_id: recipientId,
+                sender_id: currentUserId,
+                title: 'Nouveau fichier reçu',
+                message: `${senderName} vous a partagé le document « ${targetFileName} ».`,
+                type: 'FILE',
+                link: `/files?tab=shared&highlight=${fileId}`,
+              })
+              .catch((err) => console.warn('[filesService] Erreur notification partage fichier :', err));
+          }
+        } catch (err) {
+          console.warn('[filesService] Erreur envoi notifications partage :', err);
+        }
+      })();
+    }
 
     dispatchUpdate();
     return true;
@@ -911,6 +955,31 @@ export const filesService = {
           description: `a importé le fichier « ${newFile.name} » (${newFile.size_formatted})`,
         },
       }).catch(console.warn);
+
+      if (newFile.project_id) {
+        (async () => {
+          try {
+            const project = await projectService.getProjectById(newFile.project_id!);
+            const projectName = project?.name || project?.title || 'Projet';
+            let recipients: string[] = [];
+            if (project?.created_by) recipients.push(project.created_by);
+            if (project?.members) recipients.push(...project.members.map((m) => m.id || (m as any).user_id));
+            const uniqueRecipients = Array.from(new Set(recipients)).filter(
+              (uid) => uid && uid !== uploaderId
+            );
+            for (const recipientId of uniqueRecipients) {
+              notificationsService.addNotification({
+                user_id: recipientId,
+                sender_id: uploaderId,
+                title: 'Nouveau fichier dans le projet',
+                message: `${uploader.full_name || 'Un collaborateur'} a importé le document « ${newFile.name} » dans le projet ${projectName}.`,
+                type: 'FILE',
+                link: `/projects/${newFile.project_id}?tab=files`,
+              }).catch(console.warn);
+            }
+          } catch {}
+        })();
+      }
 
       return newFile;
     }
@@ -1099,6 +1168,33 @@ export const filesService = {
       },
     }).catch(console.warn);
 
+    if (targetProjectId) {
+      (async () => {
+        try {
+          const project = await projectService.getProjectById(targetProjectId!);
+          const projectName = project?.name || project?.title || 'Projet';
+          let recipients: string[] = [];
+          if (project?.created_by) recipients.push(project.created_by);
+          if (project?.members) recipients.push(...project.members.map((m) => m.id || (m as any).user_id));
+          const uniqueRecipients = Array.from(new Set(recipients)).filter(
+            (uid) => uid && uid !== user.id
+          );
+          const uploaderProfile = await profileService.getProfile(user.id);
+          const uploaderName = uploaderProfile?.full_name || user.user_metadata?.full_name || 'Un collaborateur';
+          for (const recipientId of uniqueRecipients) {
+            notificationsService.addNotification({
+              user_id: recipientId,
+              sender_id: user.id,
+              title: 'Nouveau fichier dans le projet',
+              message: `${uploaderName} a importé « ${insertedFile?.name || params.name} » dans le projet ${projectName}.`,
+              type: 'FILE',
+              link: `/projects/${targetProjectId}?tab=files`,
+            }).catch(console.warn);
+          }
+        } catch {}
+      })();
+    }
+
     dispatchUpdate();
 
     // 9. Retourner le vrai objet FileItem issu de Supabase
@@ -1118,6 +1214,66 @@ export const filesService = {
       created_at: insertedFile.created_at,
       updated_at: insertedFile.updated_at,
     };
+  },
+
+  /**
+   * Récupère un fichier par son identifiant unique.
+   */
+  async getFileById(fileId: string): Promise<FileItem | null> {
+    if (isFilesDemoMode) {
+      const files = getLocalFiles();
+      return files.find((f) => f.id === fileId) || null;
+    }
+
+    if (!isSupabaseConfigured || !isUUID(fileId)) {
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('files')
+        .select(`
+          id,
+          project_id,
+          folder_id,
+          name,
+          size_bytes,
+          storage_path,
+          mime_type,
+          uploaded_by,
+          shared_with,
+          created_at,
+          updated_at,
+          uploader:profiles!uploaded_by(id, full_name, email, role, job_title, avatar_url)
+        `)
+        .eq('id', fileId)
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      const localShares = getLocalFileShares();
+      const shares = data.shared_with || localShares[data.id] || [];
+
+      return {
+        id: data.id,
+        project_id: data.project_id,
+        folder_id: data.folder_id,
+        name: data.name,
+        size_bytes: Number(data.size_bytes) || 0,
+        size_formatted: formatFileSize(Number(data.size_bytes) || 0),
+        file_type: detectFileType(data.name),
+        file_url: '#',
+        storage_path: data.storage_path,
+        mime_type: data.mime_type,
+        uploaded_by: data.uploaded_by || '',
+        uploader: (data.uploader as unknown) as Profile,
+        shared_with: shares,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      };
+    } catch {
+      return null;
+    }
   },
 
   /**
