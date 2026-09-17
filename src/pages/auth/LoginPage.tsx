@@ -414,12 +414,6 @@ export const LoginPage: React.FC = () => {
           </form>
         )}
 
-        {/* Note de sécurité entreprise */}
-        <div className="p-3 rounded-xl bg-surface-container-low/60 border border-surface-container/60 text-center">
-          <p className="text-[11px] text-secondary leading-relaxed">
-            🔒 <strong className="text-primary-container">Espace d'entreprise privé :</strong> Les comptes collaborateurs sont créés et gérés exclusivement par la Direction.
-          </p>
-        </div>
       </div>
     </div>
   );
