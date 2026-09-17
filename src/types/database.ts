@@ -77,6 +77,8 @@ export interface FileItem {
   mime_type?: string;
   uploaded_by: string;
   uploader?: Profile;
+  shared_with?: string[];
+  shared_with_profiles?: Profile[];
   created_at: string;
   updated_at?: string;
 }

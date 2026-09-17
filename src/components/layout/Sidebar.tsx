@@ -21,7 +21,7 @@ export const Sidebar: React.FC = () => {
     const fetchCounts = async () => {
       let fileCount = 0;
       try {
-        const fileList = await filesService.getAllFiles();
+        const fileList = await filesService.getAllFiles(undefined, user?.id);
         fileCount = fileList.length;
       } catch {}
 
@@ -31,11 +31,10 @@ export const Sidebar: React.FC = () => {
       }
 
       try {
-        const [projRes, subRes, profRes, fileRes] = await Promise.all([
+        const [projRes, subRes, profRes] = await Promise.all([
           supabase.from('projects').select('id', { count: 'exact', head: true }),
           supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'PENDING'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
-          supabase.from('files').select('id', { count: 'exact', head: true }),
         ]);
 
         if (mounted) {
@@ -44,7 +43,7 @@ export const Sidebar: React.FC = () => {
             submissions: subRes.count ?? 0,
             messages: 0,
             team: profRes.count ?? 0,
-            files: fileRes.count ?? fileCount,
+            files: fileCount,
           });
         }
       } catch {

@@ -6,6 +6,7 @@ import { Breadcrumb } from '../../components/layout/Breadcrumb';
 import { UploadFileModal } from '../../components/files/UploadFileModal';
 import { CreateFolderModal } from '../../components/files/CreateFolderModal';
 import { FilePreviewModal } from '../../components/files/FilePreviewModal';
+import { ShareFileModal } from '../../components/files/ShareFileModal';
 import { filesService } from '../../services/filesService';
 import { FileItem, Folder } from '../../types/database';
 import { formatRelativeTime } from '../../lib/utils';
@@ -13,11 +14,13 @@ import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
 
 type SortOption = 'date' | 'name' | 'size';
+type FileTab = 'private' | 'shared';
 
 export const FilesPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { showToast } = useToast();
 
+  const [currentTab, setCurrentTab] = useState<FileTab>('private');
   const [folders, setFolders] = useState<Folder[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -32,13 +35,14 @@ export const FilesPage: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
   const [previewingFile, setPreviewingFile] = useState<FileItem | null>(null);
+  const [sharingFile, setSharingFile] = useState<FileItem | null>(null);
   const [activeFolderMenuId, setActiveFolderMenuId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       const [fldList, flList] = await Promise.all([
-        filesService.getFolders(),
-        filesService.getAllFiles(),
+        filesService.getFolders(undefined, undefined, user?.id),
+        filesService.getAllFiles(undefined, user?.id),
       ]);
       setFolders(fldList);
       setFiles(flList);
@@ -47,7 +51,7 @@ export const FilesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     loadData();
@@ -77,17 +81,17 @@ export const FilesPage: React.FC = () => {
   const handleDownload = async (file: FileItem) => {
     try {
       showToast(`Téléchargement de « ${file.name} » en cours...`, 'info');
-      await filesService.downloadFile(file);
+      await filesService.downloadFile(file, user?.id);
       showToast(`Téléchargement de « ${file.name} » terminé.`, 'success');
     } catch (err: any) {
       showToast(err.message || 'Erreur lors du téléchargement.', 'error');
     }
   };
 
-  // Suppression de fichier
+  // Suppression de fichier (autorisée pour le propriétaire uniquement)
   const handleDeleteFile = async (fileId: string) => {
     try {
-      await filesService.deleteFile(fileId, user?.id || 'user-admin');
+      await filesService.deleteFile(fileId, user?.id);
       showToast('Fichier supprimé avec succès.', 'success');
       loadData();
     } catch (err: any) {
@@ -103,7 +107,7 @@ export const FilesPage: React.FC = () => {
     if (!confirmDelete) return;
 
     try {
-      await filesService.deleteFolder(folder.id, user?.id || 'user-admin');
+      await filesService.deleteFolder(folder.id, user?.id);
       if (currentFolderId === folder.id) {
         setCurrentFolderId(null);
       }
@@ -114,16 +118,27 @@ export const FilesPage: React.FC = () => {
     }
   };
 
-  // Filtrage et Tri
+  // Séparation étanche : mes fichiers privés vs fichiers partagés avec moi
+  const myPrivateFiles = files.filter((f) => f.uploaded_by === user?.id);
+  const sharedWithMeFiles = files.filter(
+    (f) => f.uploaded_by !== user?.id && (f.shared_with || []).includes(user?.id || '')
+  );
+
+  // Fichiers du tab actif
+  const activeTabFiles = currentTab === 'private' ? myPrivateFiles : sharedWithMeFiles;
+
+  // Filtrage des dossiers (disponibles uniquement dans l'espace personnel)
   const filteredFolders = folders.filter((f) => {
-    if (currentFolderId !== null) return false; // En sous-dossier, on affiche les fichiers
+    if (currentTab !== 'private') return false;
+    if (currentFolderId !== null) return false;
     if (!searchQuery.trim()) return true;
     return f.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const displayedFiles = files
+  // Fichiers affichés après recherche et tri
+  const displayedFiles = activeTabFiles
     .filter((file) => {
-      if (currentFolderId !== null) {
+      if (currentTab === 'private' && currentFolderId !== null) {
         return file.folder_id === currentFolderId;
       }
       return true;
@@ -143,8 +158,8 @@ export const FilesPage: React.FC = () => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-  // Calcul du stockage réel
-  const totalFilesBytes = files.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+  // Calcul du stockage consommé par les fichiers de l'utilisateur
+  const myFilesBytes = myPrivateFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -174,9 +189,9 @@ export const FilesPage: React.FC = () => {
             currentFolder
               ? [
                   {
-                    label: 'Explorateur de Fichiers',
+                    label: 'Mon espace privé',
                     to: '/files',
-                    icon: 'cloud',
+                    icon: 'lock',
                     onClick: (e: React.MouseEvent) => {
                       e.preventDefault();
                       setCurrentFolderId(null);
@@ -185,21 +200,85 @@ export const FilesPage: React.FC = () => {
                   { label: currentFolder.name, icon: 'folder_open' },
                 ]
               : [
-                  { label: 'Espace Fichiers', icon: 'cloud' },
-                  { label: 'Tous les fichiers & dossiers' },
+                  { label: 'Espace Fichiers Sécurisé', icon: 'shield' },
+                  {
+                    label:
+                      currentTab === 'private'
+                        ? 'Mon Espace Privé'
+                        : 'Fichiers Partagés avec moi',
+                  },
                 ]
           }
         />
         <div className="flex items-center gap-1.5 text-secondary shrink-0 font-mono text-[11px] bg-surface-container-lowest px-2.5 py-1 rounded-full shadow-sm border border-surface-container">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Stockage Synchronisé
+          <span>Espace 100% Chiffré & Cloisonné</span>
         </div>
       </div>
 
-      {/* Jauge de stockage */}
-      <StorageGauge files={files} totalFilesBytes={totalFilesBytes} />
+      {/* Jauge de stockage privé */}
+      <StorageGauge files={myPrivateFiles} totalFilesBytes={myFilesBytes} />
 
-      {/* Actions Principales */}
+      {/* Sélecteur d'Espaces : Privé vs Partagés avec moi */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-container pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setCurrentTab('private');
+              setCurrentFolderId(null);
+            }}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              currentTab === 'private'
+                ? 'bg-primary-container text-on-primary shadow-xs'
+                : 'text-secondary hover:text-on-surface hover:bg-surface-container-low'
+            }`}
+          >
+            <Icon name="lock" className="text-[16px]" />
+            <span>Mon espace privé</span>
+            <span
+              className={`px-2 py-0.2 rounded-full text-[10px] font-bold ${
+                currentTab === 'private'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-surface-container text-secondary'
+              }`}
+            >
+              {myPrivateFiles.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentTab('shared');
+              setCurrentFolderId(null);
+            }}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              currentTab === 'shared'
+                ? 'bg-brand-orange text-white shadow-xs'
+                : 'text-secondary hover:text-on-surface hover:bg-surface-container-low'
+            }`}
+          >
+            <Icon name="mark_email_read" className="text-[16px]" />
+            <span>Partagés avec moi</span>
+            <span
+              className={`px-2 py-0.2 rounded-full text-[10px] font-bold ${
+                currentTab === 'shared'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-surface-container text-secondary'
+              }`}
+            >
+              {sharedWithMeFiles.length}
+            </span>
+          </button>
+        </div>
+
+        <span className="text-[11px] text-secondary">
+          {currentTab === 'private'
+            ? '🔐 Vos fichiers téléversés sont strictement privés par défaut'
+            : '📬 Fichiers que d’autres collaborateurs ont expressément partagés avec vous'}
+        </span>
+      </div>
+
+      {/* Actions Principales (Ajout dans l'espace personnel) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Button
           variant="orange"
@@ -207,14 +286,14 @@ export const FilesPage: React.FC = () => {
           className="shadow-sm"
           onClick={() => setIsUploadModalOpen(true)}
         >
-          + Téléverser un fichier
+          + Téléverser un fichier dans mon espace privé
         </Button>
         <Button
           variant="secondary"
           icon="create_new_folder"
           onClick={() => setIsCreateFolderModalOpen(true)}
         >
-          + Nouveau dossier
+          + Nouveau dossier personnel
         </Button>
       </div>
 
@@ -229,7 +308,11 @@ export const FilesPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-10 pl-9 pr-8 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-secondary text-sm border border-surface-container focus:outline-none focus:border-brand-orange/60 shadow-sm"
-            placeholder="Rechercher code, spec, dataset, format..."
+            placeholder={
+              currentTab === 'private'
+                ? 'Rechercher dans mes documents privés...'
+                : 'Rechercher parmi les fichiers reçus...'
+            }
             type="text"
           />
           {searchQuery && (
@@ -270,7 +353,9 @@ export const FilesPage: React.FC = () => {
                   setShowSortMenu(false);
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  sortBy === 'date' ? 'bg-brand-orange/10 text-brand-orange font-bold' : 'hover:bg-surface-container-low text-on-surface'
+                  sortBy === 'date'
+                    ? 'bg-brand-orange/10 text-brand-orange font-bold'
+                    : 'hover:bg-surface-container-low text-on-surface'
                 }`}
               >
                 Date récente
@@ -281,7 +366,9 @@ export const FilesPage: React.FC = () => {
                   setShowSortMenu(false);
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  sortBy === 'name' ? 'bg-brand-orange/10 text-brand-orange font-bold' : 'hover:bg-surface-container-low text-on-surface'
+                  sortBy === 'name'
+                    ? 'bg-brand-orange/10 text-brand-orange font-bold'
+                    : 'hover:bg-surface-container-low text-on-surface'
                 }`}
               >
                 Nom (A - Z)
@@ -292,7 +379,9 @@ export const FilesPage: React.FC = () => {
                   setShowSortMenu(false);
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  sortBy === 'size' ? 'bg-brand-orange/10 text-brand-orange font-bold' : 'hover:bg-surface-container-low text-on-surface'
+                  sortBy === 'size'
+                    ? 'bg-brand-orange/10 text-brand-orange font-bold'
+                    : 'hover:bg-surface-container-low text-on-surface'
                 }`}
               >
                 Taille (Décroissant)
@@ -305,17 +394,19 @@ export const FilesPage: React.FC = () => {
       {isLoading ? (
         <div className="py-16 flex flex-col items-center justify-center gap-3">
           <Icon name="spinner" spin className="text-3xl text-brand-orange" />
-          <span className="text-xs text-secondary">Chargement des fichiers et dossiers...</span>
+          <span className="text-xs text-secondary">
+            Chargement sécurisé de vos fichiers personnels...
+          </span>
         </div>
       ) : (
         <>
-          {/* Section Dossiers (visible à la racine) */}
-          {currentFolderId === null && (
+          {/* Section Dossiers personnels (visible dans Mon espace privé à la racine) */}
+          {currentTab === 'private' && currentFolderId === null && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="font-headline text-base font-bold text-primary-container">
-                    Dossiers structurés
+                    Mes dossiers personnels
                   </h2>
                   <span className="px-2 py-0.5 rounded-full bg-surface-container text-secondary text-[11px] font-bold">
                     {filteredFolders.length}
@@ -326,8 +417,8 @@ export const FilesPage: React.FC = () => {
               {filteredFolders.length === 0 ? (
                 <div className="p-6 text-center rounded-2xl border border-dashed border-surface-container bg-surface-container-lowest text-xs text-secondary">
                   {searchQuery
-                    ? 'Aucun dossier ne correspond à votre recherche.'
-                    : 'Aucun dossier créé pour le moment.'}
+                    ? 'Aucun dossier personnel ne correspond à votre recherche.'
+                    : 'Aucun dossier créé dans votre espace pour le moment.'}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -411,7 +502,9 @@ export const FilesPage: React.FC = () => {
                 <h2 className="font-headline text-base font-bold text-primary-container">
                   {currentFolder
                     ? `Fichiers dans « ${currentFolder.name} »`
-                    : 'Tous les fichiers récents'}
+                    : currentTab === 'private'
+                    ? 'Mes documents personnels'
+                    : 'Documents partagés avec vous'}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-surface-container text-secondary text-[11px] font-bold">
                   {displayedFiles.length}
@@ -421,7 +514,7 @@ export const FilesPage: React.FC = () => {
               {currentFolder && (
                 <button
                   onClick={() => setCurrentFolderId(null)}
-                  className="text-xs font-semibold text-brand-orange hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-brand-orange hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Icon name="arrow_back" className="text-sm" />
                   Retour à la racine
@@ -432,70 +525,126 @@ export const FilesPage: React.FC = () => {
             {displayedFiles.length === 0 ? (
               <div className="p-10 text-center rounded-2xl border border-dashed border-surface-container bg-surface-container-lowest flex flex-col items-center justify-center gap-2.5">
                 <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-secondary">
-                  <Icon name="folder_off" className="text-2xl" />
+                  <Icon
+                    name={currentTab === 'private' ? 'lock' : 'folder_off'}
+                    className="text-2xl"
+                  />
                 </div>
                 <p className="text-xs font-semibold text-on-surface">
                   {searchQuery
                     ? 'Aucun fichier ne correspond à votre recherche.'
                     : currentFolder
                     ? `Ce dossier est actuellement vide.`
-                    : 'Aucun fichier téléversé pour le moment.'}
+                    : currentTab === 'private'
+                    ? 'Votre espace privé est actuellement vide.'
+                    : 'Aucun collègue ne vous a encore partagé de fichier.'}
                 </p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon="cloud_upload"
-                  onClick={() => setIsUploadModalOpen(true)}
-                >
-                  Téléverser un document ici
-                </Button>
+                {currentTab === 'private' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="cloud_upload"
+                    onClick={() => setIsUploadModalOpen(true)}
+                  >
+                    Téléverser un document privé ici
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {displayedFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs hover:shadow-sm hover:border-surface-container-high transition-all group"
-                  >
+                {displayedFiles.map((file) => {
+                  const isOwner = file.uploaded_by === user?.id;
+                  const sharedCount = (file.shared_with || []).length;
+
+                  return (
                     <div
-                      onClick={() => setPreviewingFile(file)}
-                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                      key={file.id}
+                      className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-surface-container-lowest border border-surface-container shadow-xs hover:shadow-sm hover:border-surface-container-high transition-all group"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary-container shrink-0 group-hover:scale-105 transition-transform">
-                        <Icon name={getFileIcon(file.file_type)} className="text-[22px]" />
-                      </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-sm font-semibold text-on-surface truncate group-hover:text-brand-orange transition-colors">
-                          {file.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 text-[11px] text-secondary flex-wrap">
-                          <span className="font-mono">{file.size_formatted}</span>
-                          <span>•</span>
-                          <span className="truncate">{file.uploader?.full_name || 'Collaborateur'}</span>
-                          <span>•</span>
-                          <span>{formatRelativeTime(file.created_at)}</span>
+                      <div
+                        onClick={() => setPreviewingFile(file)}
+                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary-container shrink-0 group-hover:scale-105 transition-transform">
+                          <Icon name={getFileIcon(file.file_type)} className="text-[22px]" />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-on-surface truncate group-hover:text-brand-orange transition-colors">
+                              {file.name}
+                            </span>
+
+                            {/* Badges de visibilité et partage */}
+                            {isOwner ? (
+                              sharedCount === 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-bold">
+                                  <Icon name="lock" className="text-[12px]" />
+                                  Privé
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSharingFile(file);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-orange/10 text-brand-orange text-[10px] font-bold hover:bg-brand-orange/20 cursor-pointer transition-colors"
+                                  title="Gérer les partages de ce fichier"
+                                >
+                                  <Icon name="group" className="text-[12px]" />
+                                  Partagé ({sharedCount})
+                                </button>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-container/10 text-primary-container text-[10px] font-bold">
+                                <Icon name="mark_email_read" className="text-[12px] text-brand-orange" />
+                                Partagé par {file.uploader?.full_name || 'un collègue'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-[11px] text-secondary flex-wrap mt-0.5">
+                            <span className="font-mono">{file.size_formatted}</span>
+                            <span>•</span>
+                            <span className="truncate">
+                              {isOwner ? 'Vous' : file.uploader?.full_name || 'Collaborateur'}
+                            </span>
+                            <span>•</span>
+                            <span>{formatRelativeTime(file.created_at)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 ml-3">
-                      <button
-                        onClick={() => setPreviewingFile(file)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-brand-orange hover:bg-surface-container transition-colors cursor-pointer"
-                        title="Examiner le fichier"
-                      >
-                        <Icon name="visibility" className="text-[18px]" />
-                      </button>
-                      <button
-                        onClick={() => handleDownload(file)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-brand-orange hover:bg-surface-container transition-colors cursor-pointer"
-                        title="Télécharger le document"
-                      >
-                        <Icon name="download" className="text-[18px]" />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                        {/* Bouton de partage disponible uniquement pour le propriétaire */}
+                        {isOwner && (
+                          <button
+                            onClick={() => setSharingFile(file)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-brand-orange hover:bg-surface-container transition-colors cursor-pointer"
+                            title="Partager ce fichier avec des collègues"
+                          >
+                            <Icon name="share" className="text-[18px]" />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => setPreviewingFile(file)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-brand-orange hover:bg-surface-container transition-colors cursor-pointer"
+                          title="Examiner le fichier"
+                        >
+                          <Icon name="visibility" className="text-[18px]" />
+                        </button>
+                        <button
+                          onClick={() => handleDownload(file)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-brand-orange hover:bg-surface-container transition-colors cursor-pointer"
+                          title="Télécharger le document"
+                        >
+                          <Icon name="download" className="text-[18px]" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -509,7 +658,7 @@ export const FilesPage: React.FC = () => {
         folders={folders}
         currentFolderId={currentFolderId}
         onSuccess={(fileName) => {
-          showToast(`Fichier « ${fileName} » téléversé avec succès !`, 'success');
+          showToast(`Fichier « ${fileName} » enregistré dans votre espace privé !`, 'success');
           loadData();
         }}
         currentUserId={user?.id || 'user-admin'}
@@ -520,7 +669,7 @@ export const FilesPage: React.FC = () => {
         isOpen={isCreateFolderModalOpen}
         onClose={() => setIsCreateFolderModalOpen(false)}
         onSuccess={(folderName) => {
-          showToast(`Dossier « ${folderName} » créé avec succès !`, 'success');
+          showToast(`Dossier personnel « ${folderName} » créé avec succès !`, 'success');
           loadData();
         }}
         currentUserId={user?.id || 'user-admin'}
@@ -532,8 +681,29 @@ export const FilesPage: React.FC = () => {
         isOpen={Boolean(previewingFile)}
         onClose={() => setPreviewingFile(null)}
         file={previewingFile}
+        currentUserId={user?.id}
+        isAdmin={isAdmin}
         onDelete={handleDeleteFile}
         onDownload={handleDownload}
+        onOpenShare={(f) => setSharingFile(f)}
+      />
+
+      {/* Modale Partage Explicite de Fichier */}
+      <ShareFileModal
+        isOpen={Boolean(sharingFile)}
+        onClose={() => setSharingFile(null)}
+        file={sharingFile}
+        currentUserId={user?.id || ''}
+        onSuccess={(updatedFile) => {
+          const count = (updatedFile.shared_with || []).length;
+          showToast(
+            count > 0
+              ? `Fichier partagé avec succès avec ${count} collaborateur(s) !`
+              : 'Fichier rendu strictement privé.',
+            'success'
+          );
+          loadData();
+        }}
       />
     </div>
   );

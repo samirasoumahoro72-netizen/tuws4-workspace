@@ -3,23 +3,29 @@ import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
 import { FileItem } from '../../types/database';
-import { formatRelativeTime, formatDate } from '../../lib/utils';
+import { formatRelativeTime } from '../../lib/utils';
 import { filesService } from '../../services/filesService';
 
 interface FilePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   file: FileItem | null;
+  currentUserId?: string;
+  isAdmin?: boolean;
   onDelete: (fileId: string) => void;
   onDownload?: (file: FileItem) => void;
+  onOpenShare?: (file: FileItem) => void;
 }
 
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   isOpen,
   onClose,
   file,
+  currentUserId,
+  isAdmin = false,
   onDelete,
   onDownload,
+  onOpenShare,
 }) => {
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
@@ -53,12 +59,15 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
   if (!file) return null;
 
+  const isOwner = Boolean(currentUserId && file.uploaded_by === currentUserId);
+  const sharedCount = (file.shared_with || []).length;
+
   const handleDownload = async () => {
     if (onDownload) {
       onDownload(file);
     } else {
       try {
-        await filesService.downloadFile(file);
+        await filesService.downloadFile(file, currentUserId);
       } catch (err: any) {
         alert(err.message || 'Erreur lors du téléchargement.');
       }
@@ -118,33 +127,50 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           </div>
         </div>
 
-        {/* Détails Techniques & Auteur */}
+        {/* Détails Techniques & Confidentialité */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 rounded-xl bg-surface-container-lowest border border-surface-container flex flex-col gap-1">
             <span className="text-secondary font-semibold">Téléversé par</span>
             <div className="flex items-center gap-2 mt-1">
               <img
-                src={file.uploader?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'}
+                src={file.uploader?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(file.uploader?.full_name || 'user')}`}
                 alt={file.uploader?.full_name || 'Collaborateur'}
                 className="w-6 h-6 rounded-full object-cover"
               />
               <span className="font-bold text-primary-container truncate">
-                {file.uploader?.full_name || 'Collaborateur'}
+                {isOwner ? 'Vous (Propriétaire)' : (file.uploader?.full_name || 'Collaborateur')}
               </span>
             </div>
           </div>
 
           <div className="p-3 rounded-xl bg-surface-container-lowest border border-surface-container flex flex-col gap-1">
-            <span className="text-secondary font-semibold">Date d'importation</span>
-            <span className="font-bold text-primary-container mt-1">
-              {formatDate(file.created_at)}
-            </span>
+            <span className="text-secondary font-semibold">Niveau de visibilité</span>
+            <div className="flex items-center gap-1.5 mt-1 font-bold">
+              {isOwner ? (
+                sharedCount === 0 ? (
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    <Icon name="lock" className="text-[14px]" />
+                    Espace privé (Strictement confidentiel)
+                  </span>
+                ) : (
+                  <span className="text-brand-orange flex items-center gap-1">
+                    <Icon name="group" className="text-[14px]" />
+                    Partagé avec {sharedCount} collaborateur(s)
+                  </span>
+                )
+              ) : (
+                <span className="text-primary-container flex items-center gap-1">
+                  <Icon name="mark_email_read" className="text-[14px] text-brand-orange" />
+                  Partagé avec vous
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Aperçu Visuel ou Carte Document */}
+        {/* Aperçu du contenu si image */}
         {previewUrl ? (
-          <div className="p-3 rounded-2xl bg-surface-container-lowest border border-surface-container flex flex-col items-center justify-center max-h-80 overflow-hidden group relative">
+          <div className="relative rounded-2xl overflow-hidden bg-surface-container-low border border-surface-container p-2 flex items-center justify-center group min-h-[160px]">
             <img
               src={previewUrl}
               alt={file.name}
@@ -152,30 +178,50 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             />
           </div>
         ) : (
-          <div className="p-8 rounded-2xl bg-surface-container-lowest border border-dashed border-surface-container-high flex flex-col items-center justify-center text-center gap-2">
-            <Icon name="verified_user" className="text-3xl text-emerald-600" />
+          <div className="p-6 rounded-2xl bg-surface-container-lowest border border-dashed border-surface-container-high flex flex-col items-center justify-center text-center gap-2">
+            <Icon name="shield" className="text-3xl text-primary-container" />
             <span className="text-xs font-semibold text-primary-container">
-              Document vérifié et stocké en haute disponibilité
+              Espace de stockage privé et sécurisé
             </span>
-            <span className="text-[11px] text-secondary max-w-xs">
-              Le fichier est accessible en lecture et téléchargement direct pour l'ensemble des collaborateurs du projet.
+            <span className="text-[11px] text-secondary max-w-md">
+              {isOwner
+                ? 'Ce fichier réside dans votre espace personnel. Vous seul contrôlez qui peut y avoir accès.'
+                : `Ce fichier a été mis à votre disposition par ${file.uploader?.full_name || 'un collègue'}.`}
             </span>
           </div>
         )}
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-surface-container mt-1">
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            icon="delete"
-            onClick={handleDelete}
-          >
-            Supprimer
-          </Button>
+          {isOwner || isAdmin ? (
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              icon="delete"
+              onClick={handleDelete}
+            >
+              Supprimer
+            </Button>
+          ) : (
+            <span className="text-[11px] text-secondary">Lecture seule</span>
+          )}
 
           <div className="flex items-center gap-2">
+            {isOwner && onOpenShare && (
+              <Button
+                type="button"
+                variant="orange"
+                size="sm"
+                icon="share"
+                onClick={() => {
+                  onClose();
+                  onOpenShare(file);
+                }}
+              >
+                Partager
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"

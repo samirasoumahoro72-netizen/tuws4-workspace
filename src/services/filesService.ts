@@ -7,6 +7,7 @@ import { validateUploadFile, sanitizeFileName } from '../lib/security';
 // Clés pour le fallback local (DEMO / DÉVELOPPEMENT)
 const FOLDERS_KEY = 'tuws_folders_store_v2';
 const FILES_KEY = 'tuws_files_store_v2';
+const FILE_SHARES_KEY = 'tuws_file_shares_store_v1';
 
 // Détermination stricte du mode DEMO vs PRODUCTION
 const isExplicitDemo = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -20,6 +21,20 @@ const isUUID = (str?: string | null): boolean =>
 /* ========================================================================== */
 /*                             HELPERS LOCAUX                                 */
 /* ========================================================================== */
+
+export const getLocalFileShares = (): Record<string, string[]> => {
+  try {
+    const raw = localStorage.getItem(FILE_SHARES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+};
+
+export const saveLocalFileShares = (shares: Record<string, string[]>): void => {
+  try {
+    localStorage.setItem(FILE_SHARES_KEY, JSON.stringify(shares));
+  } catch {}
+};
 
 const getLocalFolders = (): Folder[] => {
   try {
@@ -342,11 +357,17 @@ export const filesService = {
   /**
    * Récupère la liste des dossiers d'un projet ou de la racine.
    */
-  async getFolders(projectId?: string, parentId?: string | null): Promise<Folder[]> {
+  /**
+   * Récupère la liste des dossiers d'un projet ou de l'espace personnel.
+   */
+  async getFolders(projectId?: string, parentId?: string | null, userId?: string): Promise<Folder[]> {
     if (isFilesDemoMode) {
       let list = getLocalFolders();
       if (projectId) {
         list = list.filter((f) => f.project_id === projectId);
+      } else if (userId) {
+        // Espace personnel : uniquement les dossiers créés par l'utilisateur
+        list = list.filter((f) => f.created_by === userId);
       }
       if (parentId !== undefined) {
         list = list.filter((f) => (parentId === null ? !f.parent_id : f.parent_id === parentId));
@@ -365,6 +386,9 @@ export const filesService = {
 
     if (projectId && isUUID(projectId)) {
       query = query.eq('project_id', projectId);
+    } else if (userId && isUUID(userId)) {
+      // Espace personnel : uniquement les dossiers créés par l'utilisateur connecté
+      query = query.eq('created_by', userId);
     }
     if (parentId !== undefined) {
       if (parentId === null) {
@@ -430,7 +454,7 @@ export const filesService = {
   },
 
   /**
-   * Ajoute un nouveau dossier dans un projet PostgreSQL.
+   * Ajoute un nouveau dossier dans un projet PostgreSQL ou espace personnel.
    */
   async addFolder(
     name: string,
@@ -443,7 +467,7 @@ export const filesService = {
       const folders = getLocalFolders();
       const newFolder: Folder = {
         id: `fld-${Date.now()}`,
-        project_id: projectId || 'proj-1',
+        project_id: projectId || null,
         parent_id: parentId || null,
         name: cleanFolderName,
         created_by: createdBy || 'user-admin',
@@ -456,7 +480,7 @@ export const filesService = {
 
       activitiesService.logActivity({
         actorId: newFolder.created_by,
-        projectId: newFolder.project_id,
+        projectId: newFolder.project_id || undefined,
         action: 'create_folder',
         entityType: 'folder',
         entityId: newFolder.id,
@@ -479,11 +503,13 @@ export const filesService = {
       throw new Error("Authentification requise pour créer un dossier.");
     }
 
-    const targetProjectId = await resolveProjectId(projectId, userId);
+    const targetProjectId = projectId ? await resolveProjectId(projectId, userId) : null;
 
-    const hasAccess = await checkProjectAccess(targetProjectId, userId);
-    if (!hasAccess) {
-      throw new Error("Vous n'êtes pas autorisé à créer un dossier dans ce projet.");
+    if (targetProjectId) {
+      const hasAccess = await checkProjectAccess(targetProjectId, userId);
+      if (!hasAccess) {
+        throw new Error("Vous n'êtes pas autorisé à créer un dossier dans ce projet.");
+      }
     }
 
     const insertFolderPayload: any = {
@@ -555,7 +581,7 @@ export const filesService = {
 
       activitiesService.logActivity({
         actorId: userId || 'user-admin',
-        projectId: target.project_id,
+        projectId: target.project_id || undefined,
         action: 'delete_folder',
         entityType: 'folder',
         entityId: folderId,
@@ -642,9 +668,13 @@ export const filesService = {
   },
 
   /**
-   * Récupère les fichiers filtrés par projet et/ou dossier.
+   * Récupère les fichiers avec isolation stricte :
+   * - Fichiers créés par l'utilisateur connecté (espace personnel privé)
+   * - Fichiers expressément partagés avec lui par d'autres collaborateurs
    */
-  async getFiles(projectId?: string, folderId?: string | null): Promise<FileItem[]> {
+  async getFiles(projectId?: string, folderId?: string | null, userId?: string): Promise<FileItem[]> {
+    const localShares = getLocalFileShares();
+
     if (isFilesDemoMode) {
       let list = getLocalFiles();
       if (projectId) {
@@ -653,7 +683,18 @@ export const filesService = {
       if (folderId !== undefined) {
         list = list.filter((f) => (folderId === null ? !f.folder_id : f.folder_id === folderId));
       }
-      return list;
+      if (userId) {
+        list = list.filter((f) => {
+          const shares = f.shared_with || localShares[f.id] || [];
+          const isOwner = f.uploaded_by === userId;
+          const isSharedWithMe = shares.includes(userId);
+          return isOwner || isSharedWithMe;
+        });
+      }
+      return list.map((f) => ({
+        ...f,
+        shared_with: f.shared_with || localShares[f.id] || [],
+      }));
     }
 
     if (!isSupabaseConfigured) {
@@ -693,33 +734,98 @@ export const filesService = {
     if (error) {
       console.warn(`[filesService] Notice récupération fichiers Supabase : ${error.message}`);
     } else if (data) {
-      supabaseFiles = data.map((row) => ({
-        id: row.id,
-        project_id: row.project_id,
-        folder_id: row.folder_id,
-        name: row.name,
-        size_bytes: Number(row.size_bytes) || 0,
-        size_formatted: formatFileSize(Number(row.size_bytes) || 0),
-        file_type: detectFileType(row.name),
-        file_url: '#',
-        storage_path: row.storage_path,
-        mime_type: row.mime_type,
-        uploaded_by: row.uploaded_by || '',
-        uploader: (row.uploader as unknown) as Profile,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      }));
+      supabaseFiles = data.map((row) => {
+        const fileShares = (row as any).shared_with || localShares[row.id] || [];
+        return {
+          id: row.id,
+          project_id: row.project_id,
+          folder_id: row.folder_id,
+          name: row.name,
+          size_bytes: Number(row.size_bytes) || 0,
+          size_formatted: formatFileSize(Number(row.size_bytes) || 0),
+          file_type: detectFileType(row.name),
+          file_url: '#',
+          storage_path: row.storage_path,
+          mime_type: row.mime_type,
+          uploaded_by: row.uploaded_by || '',
+          uploader: (row.uploader as unknown) as Profile,
+          shared_with: fileShares,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+      });
+
+      if (userId) {
+        // Filtrage strict : l'utilisateur ne doit voir QUE ses propres fichiers
+        // OU ceux qu'un autre membre lui a explicitement partagés
+        supabaseFiles = supabaseFiles.filter((f) => {
+          const isOwner = f.uploaded_by === userId;
+          const isSharedWithMe = (f.shared_with || []).includes(userId);
+          return isOwner || isSharedWithMe;
+        });
+      }
     }
 
-    // En mode Supabase connecté, on retourne strictement les fichiers réels de la base de données
     return supabaseFiles;
   },
 
   /**
-   * Récupère tous les fichiers accessibles.
+   * Récupère tous les fichiers accessibles par l'utilisateur connecté.
    */
-  async getAllFiles(projectId?: string): Promise<FileItem[]> {
-    return this.getFiles(projectId);
+  async getAllFiles(projectId?: string, userId?: string): Promise<FileItem[]> {
+    return this.getFiles(projectId, undefined, userId);
+  },
+
+  /**
+   * Partage ou révoque le partage d'un fichier avec une liste explicite de collaborateurs.
+   * Seul le propriétaire peut modifier les partages.
+   */
+  async shareFile(fileId: string, targetUserIds: string[], currentUserId: string): Promise<boolean> {
+    const localShares = getLocalFileShares();
+    const cleanTargets = Array.from(new Set(targetUserIds.filter(Boolean)));
+
+    // 1. Sauvegarder dans le store local pour cohérence immédiate
+    localShares[fileId] = cleanTargets;
+    saveLocalFileShares(localShares);
+
+    // Mettre à jour aussi dans localFiles si présent
+    const localFiles = getLocalFiles();
+    const fIdx = localFiles.findIndex((f) => f.id === fileId);
+    if (fIdx !== -1) {
+      localFiles[fIdx].shared_with = cleanTargets;
+      saveLocalFiles(localFiles);
+    }
+
+    // 2. Si Supabase est connecté, persister dans public.files
+    if (isSupabaseConfigured && isUUID(fileId)) {
+      try {
+        await supabase
+          .from('files')
+          .update({ shared_with: cleanTargets })
+          .eq('id', fileId)
+          .eq('uploaded_by', currentUserId);
+      } catch (err) {
+        console.warn('[filesService] Notice update shared_with dans Supabase :', err);
+      }
+    }
+
+    // 3. Journaliser l'action
+    activitiesService.logActivity({
+      actorId: currentUserId,
+      action: 'share_file',
+      entityType: 'file',
+      entityId: fileId,
+      metadata: {
+        recipients_count: cleanTargets.length,
+        description:
+          cleanTargets.length > 0
+            ? `a partagé un fichier avec ${cleanTargets.length} collaborateur(s)`
+            : `a rendu son fichier privé`,
+      },
+    }).catch(console.warn);
+
+    dispatchUpdate();
+    return true;
   },
 
   /**
@@ -762,7 +868,7 @@ export const filesService = {
 
       const newFile: FileItem = {
         id: fileId,
-        project_id: params.project_id || 'proj-1',
+        project_id: params.project_id || null,
         folder_id: params.folder_id || null,
         name: params.name.trim(),
         size_bytes: params.size_bytes,
@@ -772,6 +878,7 @@ export const filesService = {
         file_url: '#',
         uploaded_by: uploaderId,
         uploader,
+        shared_with: [],
         created_at: new Date().toISOString(),
       };
 
@@ -932,10 +1039,11 @@ export const filesService = {
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
           email: user.email || '',
-          role: 'admin',
-          job_title: 'Collaborateur',
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email || 'user')}`,
+          role: user.user_metadata?.role || 'employee',
+          job_title: user.user_metadata?.job_title || 'Collaborateur',
+          avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email || 'user')}`,
         },
+        shared_with: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -1048,7 +1156,17 @@ export const filesService = {
   /**
    * Télécharge un fichier de façon sécurisée (binaire réel en démo, Signed URL temporaire en Supabase).
    */
-  async downloadFile(file: FileItem): Promise<void> {
+  async downloadFile(file: FileItem, userId?: string): Promise<void> {
+    if (userId) {
+      const localShares = getLocalFileShares();
+      const shares = file.shared_with || localShares[file.id] || [];
+      const isOwner = file.uploaded_by === userId;
+      const isSharedWithMe = shares.includes(userId);
+      if (!isOwner && !isSharedWithMe) {
+        throw new Error("Accès refusé : ce fichier est privé et ne vous a pas été partagé.");
+      }
+    }
+
     if (isFilesDemoMode) {
       // 1. Récupérer le vrai fichier binaire stocké dans IndexedDB
       let blobToDownload: Blob | null = await getDemoBlob(file.id);
@@ -1144,12 +1262,21 @@ export const filesService = {
 
   /**
    * Supprime un fichier du bucket Supabase Storage puis de public.files.
+   * Seul le propriétaire ou la direction peut supprimer un fichier.
    */
   async deleteFile(fileId: string, userId?: string): Promise<boolean> {
+    const localShares = getLocalFileShares();
+    delete localShares[fileId];
+    saveLocalFileShares(localShares);
+
     if (isFilesDemoMode) {
       const files = getLocalFiles();
       const target = files.find((f) => f.id === fileId);
       if (!target) return false;
+
+      if (userId && target.uploaded_by && target.uploaded_by !== userId) {
+        throw new Error("Accès refusé : seul le propriétaire de ce fichier peut le supprimer.");
+      }
 
       // Nettoyage du binaire dans IndexedDB
       await deleteDemoBlob(fileId);
@@ -1173,7 +1300,7 @@ export const filesService = {
 
       activitiesService.logActivity({
         actorId: userId || 'user-admin',
-        projectId: target.project_id,
+        projectId: target.project_id || undefined,
         action: 'delete_file',
         entityType: 'file',
         entityId: fileId,
@@ -1201,6 +1328,17 @@ export const filesService = {
       targetFile = data;
     } catch (err) {
       console.warn('[filesService] Notice recherche fichier Supabase :', err);
+    }
+
+    if (userId && targetFile?.uploaded_by && targetFile.uploaded_by !== userId) {
+      try {
+        const { data: prof } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+        if (prof?.role !== 'admin') {
+          throw new Error("Accès refusé : seul le propriétaire de ce fichier peut le supprimer.");
+        }
+      } catch (e: any) {
+        if (e.message.includes('Accès refusé')) throw e;
+      }
     }
 
     // 2. Supprimer le fichier du bucket project-files si présent
