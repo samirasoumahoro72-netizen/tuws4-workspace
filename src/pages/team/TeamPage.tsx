@@ -155,17 +155,43 @@ export const TeamPage: React.FC = () => {
     fetchMembers();
   }, []);
 
-  // Filtrer les collaborateurs
+  // Filtrer les membres de l'équipe selon les règles d'affichage et de rôle
   const filteredMembers = useMemo(() => {
-    if (!searchQuery.trim()) return members;
-    const query = searchQuery.toLowerCase();
-    return members.filter(
-      (m) =>
-        m.full_name?.toLowerCase().includes(query) ||
-        m.job_title?.toLowerCase().includes(query) ||
-        m.email?.toLowerCase().includes(query)
-    );
-  }, [members, searchQuery]);
+    let list = members;
+
+    // Règle d'accès métier :
+    // Quand un collaborateur se connecte, il ne doit PAS voir son propre profil dans l'annuaire,
+    // mais il DOIT voir les autres collaborateurs ainsi que le profil de son patron (Direction).
+    if (!isAdmin) {
+      list = list.filter((m) => {
+        const isSelf =
+          m.id === user?.id ||
+          m.id === currentProfile?.id ||
+          (Boolean(m.user_id) && Boolean(user?.id) && m.user_id === user?.id) ||
+          (Boolean(m.email) && Boolean(user?.email) && m.email?.trim().toLowerCase() === user?.email?.trim().toLowerCase());
+        return !isSelf;
+      });
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      list = list.filter(
+        (m) =>
+          m.full_name?.toLowerCase().includes(query) ||
+          m.job_title?.toLowerCase().includes(query) ||
+          m.email?.toLowerCase().includes(query)
+      );
+    }
+
+    // Toujours ordonner avec le patron (Direction / Admin) en première position
+    return [...list].sort((a, b) => {
+      const aIsAdmin = (a.role || '').toLowerCase() === 'admin';
+      const bIsAdmin = (b.role || '').toLowerCase() === 'admin';
+      if (aIsAdmin && !bIsAdmin) return -1;
+      if (!aIsAdmin && bIsAdmin) return 1;
+      return 0;
+    });
+  }, [members, searchQuery, isAdmin, user, currentProfile]);
 
   // Ouvrir la modale d'ajout (Admin uniquement)
   const handleOpenAddModal = () => {
@@ -330,7 +356,7 @@ export const TeamPage: React.FC = () => {
               Équipe TUWSHIUAH
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-primary-container text-xs font-bold">
-              {members.length}
+              {filteredMembers.length}
             </span>
           </div>
           <p className="text-sm text-secondary mt-0.5">

@@ -21,6 +21,42 @@ const saveLocalProfiles = (profiles: Profile[]) => {
   localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(profiles));
 };
 
+export const getBossProfile = (): Profile => {
+  try {
+    const rawBoss = localStorage.getItem('tuws_boss_profile');
+    if (rawBoss) {
+      const parsed = JSON.parse(rawBoss);
+      if (parsed && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+        return {
+          ...parsed,
+          role: 'admin',
+        };
+      }
+    }
+    const rawSess = localStorage.getItem('tuwshiuah_workspace_session');
+    if (rawSess) {
+      const parsed = JSON.parse(rawSess);
+      if (parsed && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+        return {
+          ...parsed,
+          role: 'admin',
+        };
+      }
+    }
+  } catch {}
+
+  const local = getLocalProfiles();
+  const foundAdmin = local.find(
+    (p) => p.role === 'admin' || p.email?.includes('direction') || p.email?.includes('samira')
+  );
+  if (foundAdmin) {
+    return { ...foundAdmin, role: 'admin' };
+  }
+
+  const mockAdmin = mockProfiles.find((p) => p.role === 'admin');
+  return mockAdmin || mockProfiles[0];
+};
+
 export const profileService = {
   /**
    * Récupère la liste de tous les profils / collaborateurs
@@ -36,10 +72,34 @@ export const profileService = {
         if (!error && data) {
           const isExplicitProd = import.meta.env.VITE_DEMO_MODE === 'false';
           if (data.length > 0 || isExplicitProd) {
-            const formatted = data.map((p) => ({
-              ...p,
-              role: (p.role?.toLowerCase() === 'admin' ? 'admin' : 'employee') as 'admin' | 'employee',
-            }));
+            let formatted: Profile[] = data.map((p) => {
+              const isSamiraOrDir =
+                p.email?.toLowerCase().includes('samira') ||
+                p.email?.toLowerCase().includes('direction') ||
+                (p.job_title?.toLowerCase().includes('direct') && !p.job_title?.toLowerCase().includes('sous')) ||
+                p.role?.toLowerCase() === 'admin';
+              return {
+                ...p,
+                role: (isSamiraOrDir ? 'admin' : 'employee') as 'admin' | 'employee',
+              };
+            });
+
+            // Garantir que le profil du patron (Direction / Admin) est toujours présent
+            const hasAdmin = formatted.some((p) => (p.role || '').toLowerCase() === 'admin');
+            if (!hasAdmin) {
+              const boss = getBossProfile();
+              formatted = [boss, ...formatted];
+            }
+
+            // Toujours positionner le patron en tête de liste
+            formatted.sort((a, b) => {
+              const aIsAdmin = (a.role || '').toLowerCase() === 'admin';
+              const bIsAdmin = (b.role || '').toLowerCase() === 'admin';
+              if (aIsAdmin && !bIsAdmin) return -1;
+              if (!aIsAdmin && bIsAdmin) return 1;
+              return 0;
+            });
+
             saveLocalProfiles(formatted);
             return formatted;
           }
@@ -49,7 +109,16 @@ export const profileService = {
       }
     }
 
-    return getLocalProfiles();
+    const localList = getLocalProfiles();
+    const hasAdminLocal = localList.some((p) => (p.role || '').toLowerCase() === 'admin');
+    const fullList = hasAdminLocal ? localList : [getBossProfile(), ...localList];
+    return fullList.sort((a, b) => {
+      const aIsAdmin = (a.role || '').toLowerCase() === 'admin';
+      const bIsAdmin = (b.role || '').toLowerCase() === 'admin';
+      if (aIsAdmin && !bIsAdmin) return -1;
+      if (!aIsAdmin && bIsAdmin) return 1;
+      return 0;
+    });
   },
 
   /**
@@ -69,11 +138,19 @@ export const profileService = {
         if (data && !error) {
           const isSamiraOrDir =
             data.email?.toLowerCase().includes('samira') ||
-            data.email?.toLowerCase().includes('direction');
-          return {
+            data.email?.toLowerCase().includes('direction') ||
+            (data.job_title?.toLowerCase().includes('direct') && !data.job_title?.toLowerCase().includes('sous'));
+          const role = isSamiraOrDir || data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee';
+          const prof: Profile = {
             ...data,
-            role: isSamiraOrDir || data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee',
+            role,
           };
+          if (role === 'admin') {
+            try {
+              localStorage.setItem('tuws_boss_profile', JSON.stringify(prof));
+            } catch {}
+          }
+          return prof;
         }
 
         // Si la ligne n'existe pas encore dans public.profiles mais l'utilisateur est authentifié
@@ -95,6 +172,12 @@ export const profileService = {
             is_online: true,
             created_at: new Date().toISOString(),
           };
+
+          if (assignedRole === 'admin') {
+            try {
+              localStorage.setItem('tuws_boss_profile', JSON.stringify(newProfile));
+            } catch {}
+          }
 
           try {
             await supabase.from('profiles').upsert({
@@ -169,10 +252,15 @@ export const profileService = {
         }
 
         if (data && !error) {
+          const isBoss =
+            data.role?.toLowerCase() === 'admin' ||
+            data.email?.toLowerCase().includes('samira') ||
+            data.email?.toLowerCase().includes('direction') ||
+            (data.job_title?.toLowerCase().includes('direct') && !data.job_title?.toLowerCase().includes('sous'));
           const updated: Profile = {
             ...data,
             gender: sanitizedUpdates.gender || data.gender,
-            role: (data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),
+            role: (isBoss ? 'admin' : 'employee'),
           };
           const current = getLocalProfiles();
           const idx = current.findIndex((p) => p.id === userId);
@@ -185,6 +273,9 @@ export const profileService = {
             if (sessRaw) {
               const sess = JSON.parse(sessRaw);
               localStorage.setItem('tuwshiuah_workspace_session', JSON.stringify({ ...sess, ...updated }));
+            }
+            if (isBoss) {
+              localStorage.setItem('tuws_boss_profile', JSON.stringify(updated));
             }
           } catch {
             // ignoré

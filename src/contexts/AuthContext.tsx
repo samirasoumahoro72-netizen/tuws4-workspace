@@ -21,6 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const p = await profileService.getProfile(userId);
       if (p) {
         setProfile(p);
+        if (p.role === 'admin') {
+          try {
+            localStorage.setItem('tuws_boss_profile', JSON.stringify(p));
+          } catch {}
+        }
         return p;
       }
     } catch (err) {
@@ -220,6 +225,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updated = await profileService.updateProfile(targetId, updates);
       if (updated) {
         setProfile((prev) => ({ ...(prev || {}), ...updated }));
+        if (updated.role === 'admin' || isAdmin) {
+          try {
+            localStorage.setItem('tuws_boss_profile', JSON.stringify({ ...(profile || {}), ...updated, role: 'admin' }));
+          } catch {}
+        }
       }
       return updated;
     } catch (err) {
