@@ -134,16 +134,44 @@ export const profileService = {
 
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        // Mettre à jour les métadonnées de l'utilisateur dans Supabase Auth
+        if (sanitizedUpdates.gender || sanitizedUpdates.full_name) {
+          try {
+            await supabase.auth.updateUser({
+              data: {
+                ...(sanitizedUpdates.gender ? { gender: sanitizedUpdates.gender } : {}),
+                ...(sanitizedUpdates.full_name ? { full_name: sanitizedUpdates.full_name } : {}),
+              },
+            });
+          } catch {
+            // non bloquant
+          }
+        }
+
+        let { data, error } = await supabase
           .from('profiles')
           .update(sanitizedUpdates)
           .eq('id', userId)
           .select()
           .single();
 
+        if (error && error.message?.toLowerCase().includes('gender')) {
+          const fallbackUpdates = { ...sanitizedUpdates };
+          delete (fallbackUpdates as any).gender;
+          const retry = await supabase
+            .from('profiles')
+            .update(fallbackUpdates)
+            .eq('id', userId)
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
+
         if (data && !error) {
           const updated: Profile = {
             ...data,
+            gender: sanitizedUpdates.gender || data.gender,
             role: (data.role?.toLowerCase() === 'admin' ? 'admin' : 'employee'),
           };
           const current = getLocalProfiles();
@@ -151,6 +179,15 @@ export const profileService = {
           if (idx !== -1) {
             current[idx] = updated;
             saveLocalProfiles(current);
+          }
+          try {
+            const sessRaw = localStorage.getItem('tuwshiuah_workspace_session');
+            if (sessRaw) {
+              const sess = JSON.parse(sessRaw);
+              localStorage.setItem('tuwshiuah_workspace_session', JSON.stringify({ ...sess, ...updated }));
+            }
+          } catch {
+            // ignoré
           }
           return updated;
         }
@@ -165,6 +202,15 @@ export const profileService = {
       const updated = { ...current[idx], ...sanitizedUpdates };
       current[idx] = updated;
       saveLocalProfiles(current);
+      try {
+        const sessRaw = localStorage.getItem('tuwshiuah_workspace_session');
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          localStorage.setItem('tuwshiuah_workspace_session', JSON.stringify({ ...sess, ...updated }));
+        }
+      } catch {
+        // ignoré
+      }
       return updated;
     }
     return null;

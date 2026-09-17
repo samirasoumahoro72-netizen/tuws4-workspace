@@ -213,6 +213,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !!user;
   }, [user]);
 
+  const updateUserProfile = async (updates: Partial<Profile>): Promise<Profile | null> => {
+    if (!profile?.id && !user?.id) return null;
+    const targetId = profile?.id || user!.id;
+    try {
+      const updated = await profileService.updateProfile(targetId, updates);
+      if (updated) {
+        setProfile((prev) => ({ ...(prev || {}), ...updated }));
+      }
+      return updated;
+    } catch (err) {
+      console.warn('[AuthProvider] Erreur updateUserProfile :', err);
+      throw err;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     profile,
@@ -228,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     switchUser,
+    updateUserProfile,
     availableProfiles: mockProfiles,
   };
 

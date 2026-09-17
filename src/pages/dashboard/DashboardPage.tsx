@@ -79,6 +79,14 @@ export const DashboardPage: React.FC = () => {
   const totalMembers = stats.totalMembers ?? (Math.max(stats.totalAdmins || 1, 1) + (stats.totalEmployees || 0));
   const totalAdmins = stats.totalAdmins || 1;
 
+  const isFemale =
+    profile?.gender === 'female' ||
+    ((user as any)?.user_metadata?.gender === 'female') ||
+    (profile?.gender === undefined && (
+      (profile?.full_name && /samira|sarah|julie|amina|inès|ines|marie|laura|claire|sophie|camille|emma|chloé|léa|noura/i.test(profile.full_name)) ||
+      (user?.email && /samira/i.test(user.email))
+    ));
+
   const pendingSubmissions = dashboardData?.pendingSubmissions || [];
   const activeProjects = dashboardData?.activeProjects || [];
   const employees = dashboardData?.employees || [];
@@ -119,9 +127,19 @@ export const DashboardPage: React.FC = () => {
         <div className="flex flex-col gap-1">
           {isAdmin ? (
             <>
-              <h1 className="font-headline text-2xl font-bold text-primary-container tracking-tight">
-                Bonjour, M. le Directeur
-              </h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="font-headline text-2xl font-bold text-primary-container tracking-tight">
+                  {isFemale ? 'Bonjour, Mme la Directrice' : 'Bonjour, M. le Directeur'}
+                </h1>
+                <Link
+                  to="/profile"
+                  title="Modifier votre civilité dans Mon Profil"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary hover:text-brand-orange px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors"
+                >
+                  <Icon name="tune" className="text-xs" />
+                  <span>Civilité</span>
+                </Link>
+              </div>
               <p className="text-sm text-secondary">
                 Supervision globale et arbitrages opérationnels de l'agence.
               </p>
@@ -131,7 +149,7 @@ export const DashboardPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-headline text-2xl font-bold text-on-surface tracking-tight">
-                    Bonjour {(profile?.full_name || (user as any)?.user_metadata?.full_name || user?.email || 'Collaborateur').split(' ')[0]}
+                    {isFemale ? 'Bonjour, Mme' : 'Bonjour, M.'} {(profile?.full_name || (user as any)?.user_metadata?.full_name || user?.email || 'Collaborateur').split(' ')[0]}
                   </h1>
                 </div>
                 <p className="text-sm text-secondary">

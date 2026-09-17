@@ -6,12 +6,22 @@ import { Button } from '../../components/ui/Button';
 import { profileService } from '../../services/profileService';
 
 export const ProfilePage: React.FC = () => {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, updateUserProfile } = useAuth();
   const { showToast } = useToast();
+
+  const isFemaleDefault =
+    profile?.gender === 'female' ||
+    (profile?.gender === undefined && (
+      (profile?.full_name && /samira|sarah|julie|amina|inès|ines|marie|laura|claire|sophie|camille|emma|chloé|léa|noura/i.test(profile.full_name)) ||
+      (user?.email && /samira/i.test(user.email))
+    ));
 
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [jobTitle, setJobTitle] = useState(profile?.job_title || '');
   const [phone, setPhone] = useState(profile?.phone || '+33 6 12 34 56 78');
+  const [gender, setGender] = useState<'female' | 'male'>(
+    profile?.gender || (isFemaleDefault ? 'female' : 'male')
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -19,6 +29,9 @@ export const ProfilePage: React.FC = () => {
       setFullName(profile.full_name || '');
       setJobTitle(profile.job_title || '');
       setPhone(profile.phone || '+33 6 12 34 56 78');
+      if (profile.gender) {
+        setGender(profile.gender);
+      }
     }
   }, [profile]);
 
@@ -26,20 +39,32 @@ export const ProfilePage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (profile?.id || user?.id) {
-        await profileService.updateProfile(profile?.id || user!.id, {
-          full_name: fullName,
-          job_title: jobTitle,
-          phone: phone,
-        });
+      const targetId = profile?.id || user?.id;
+      if (targetId) {
+        const payload = {
+          full_name: fullName.trim(),
+          job_title: jobTitle.trim(),
+          phone: phone.trim(),
+          gender: gender,
+        };
+
+        if (updateUserProfile) {
+          await updateUserProfile(payload);
+        } else {
+          await profileService.updateProfile(targetId, payload);
+        }
       }
-      showToast('Profil mis à jour avec succès', 'check_circle', 'success');
+      showToast('Profil et civilité mis à jour avec succès', 'check_circle', 'success');
     } catch {
       showToast('Erreur lors de la mise à jour du profil', 'error', 'error');
     } finally {
       setSaving(false);
     }
   };
+
+  const previewGreeting = isAdmin
+    ? (gender === 'female' ? 'Bonjour, Mme la Directrice' : 'Bonjour, M. le Directeur')
+    : (gender === 'female' ? `Bonjour, Madame ${fullName.split(' ')[0] || ''}` : `Bonjour, Monsieur ${fullName.split(' ')[0] || ''}`);
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
@@ -48,7 +73,7 @@ export const ProfilePage: React.FC = () => {
           Mon Profil
         </h1>
         <p className="text-sm text-secondary mt-0.5">
-          Informations personnelles et fiche collaborateur au sein de TUWSHIUAH.
+          Informations personnelles, civilité et préférences de salutation au sein de TUWSHIUAH.
         </p>
       </div>
 
@@ -58,7 +83,12 @@ export const ProfilePage: React.FC = () => {
           <div className="flex items-center gap-5 pb-6 border-b border-surface-container">
             <div className="relative">
               <img
-                src={profile?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnB8-LrzApQulqNkPJbPdGprKfPsV6m6e_qy5NnWlvXmetrpKzZfK_0XcEXlb9H_hJRcf6Uh_QLQDhX26YKcGxMnpdhkUbmln8uliAQkRb6itVjrnyOxX5iAsh2dO31ZdQeeHQbGF8AwNcSEHiZSLfhRqjvfATw0LwX8jbI8JLqYRkb0LVdVA8A8RHx6b5a9juSNpGWhU68laTs8dKx492aA_k0OVTtQOUX_RBoGXIJP9mnV5GqAZngg'}
+                src={
+                  profile?.avatar_url ||
+                  (gender === 'female'
+                    ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Directrice&top=bun,longButNotTooLong&facialHairProbability=0'
+                    : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Directeur&top=shortCurly,theCaesar')
+                }
                 alt={profile?.full_name || 'Profil'}
                 className="w-20 h-20 rounded-full object-cover ring-4 ring-surface-container shadow-md"
               />
@@ -69,12 +99,95 @@ export const ProfilePage: React.FC = () => {
                 {profile?.full_name || user?.email}
               </h2>
               <span className="text-xs text-secondary font-medium">
-                {profile?.job_title || 'Collaborateur'}
+                {profile?.job_title || (isAdmin ? 'Direction Générale' : 'Collaborateur')}
               </span>
               <span className="text-xs text-brand-orange font-bold mt-1 flex items-center gap-1.5">
                 <Icon name={isAdmin ? 'crown' : 'briefcase'} className="text-[12px]" />
-                <span>{isAdmin ? 'Patron / Administrateur' : 'Collaborateur'}</span>
+                <span>
+                  {isAdmin
+                    ? (gender === 'female' ? 'Directrice Générale (Admin)' : 'Directeur Général (Admin)')
+                    : 'Collaborateur'}
+                </span>
               </span>
+            </div>
+          </div>
+
+          {/* Section Civilité / Salutation */}
+          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container flex flex-col gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <label className="text-xs font-bold text-primary-container uppercase tracking-wider flex items-center gap-1.5">
+                  <Icon name="badge" className="text-brand-orange text-base" />
+                  <span>Civilité & Formule de Salutation</span>
+                </label>
+                <p className="text-xs text-secondary mt-0.5">
+                  Définit si vous êtes accueilli(e) par « Bonjour, Madame » ou « Bonjour, Monsieur ».
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-brand-orange/30 shadow-xs text-xs font-bold text-primary-container">
+                <span className="w-2 h-2 rounded-full bg-brand-orange animate-pulse" />
+                <span>Aperçu : <em>« {previewGreeting} »</em></span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setGender('female')}
+                className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer ${
+                  gender === 'female'
+                    ? 'border-brand-orange bg-white shadow-sm ring-2 ring-brand-orange/20 text-primary-container'
+                    : 'border-surface-container bg-surface-container-lowest text-secondary hover:border-surface-container-high'
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${
+                    gender === 'female' ? 'bg-brand-orange/15 text-brand-orange' : 'bg-surface-container text-secondary'
+                  }`}
+                >
+                  👩
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-primary-container">Madame</span>
+                    {gender === 'female' && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-brand-orange text-white font-bold">Actif</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-secondary truncate mt-0.5">
+                    {isAdmin ? '« Bonjour, Mme la Directrice »' : '« Bonjour, Madame »'}
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setGender('male')}
+                className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer ${
+                  gender === 'male'
+                    ? 'border-brand-orange bg-white shadow-sm ring-2 ring-brand-orange/20 text-primary-container'
+                    : 'border-surface-container bg-surface-container-lowest text-secondary hover:border-surface-container-high'
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${
+                    gender === 'male' ? 'bg-brand-orange/15 text-brand-orange' : 'bg-surface-container text-secondary'
+                  }`}
+                >
+                  👨
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-primary-container">Monsieur</span>
+                    {gender === 'male' && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-brand-orange text-white font-bold">Actif</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-secondary truncate mt-0.5">
+                    {isAdmin ? '« Bonjour, M. le Directeur »' : '« Bonjour, Monsieur »'}
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
 

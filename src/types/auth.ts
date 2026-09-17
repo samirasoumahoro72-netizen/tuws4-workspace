@@ -23,5 +23,6 @@ export interface AuthContextType extends AuthState {
   login: (email: string, role?: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   switchUser: (userId: string) => Promise<void>;
+  updateUserProfile?: (updates: Partial<Profile>) => Promise<Profile | null>;
   availableProfiles: Profile[];
 }
