@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Activity, Profile, Project, ProjectStatus, Submission, SubmissionFile, SubmissionStatus, UserRole } from '../types/database';
 import { notificationsService } from './notificationsService';
 import { projectService } from './projectService';
+import { profileService } from './profileService';
 import { activitiesService } from './activitiesService';
 import { mockSubmissions } from './mockData';
 
@@ -10,6 +11,8 @@ export interface DashboardStats {
   inProgressProjects: number;
   completedProjects: number;
   delayedProjects: number;
+  totalMembers: number;
+  totalAdmins: number;
   totalEmployees: number;
   pendingSubmissionsCount: number;
   unreadNotificationsCount: number;
@@ -86,6 +89,8 @@ export const dashboardService = {
       inProgressProjects: 0,
       completedProjects: 0,
       delayedProjects: 0,
+      totalMembers: 1,
+      totalAdmins: 1,
       totalEmployees: 0,
       pendingSubmissionsCount: 0,
       unreadNotificationsCount: 0,
@@ -99,6 +104,11 @@ export const dashboardService = {
           notificationsService.getUnreadCount(userId),
           activitiesService.getActivities(userId, _isAdmin, 20),
         ]);
+
+        const allProfiles = await profileService.getAllProfiles();
+        const allAdmins = allProfiles.filter((p: Profile) => (p.role || '').toLowerCase() === 'admin');
+        const totalAdmins = Math.max(allAdmins.length, 1);
+        const totalMembers = totalAdmins + allEmployees.length;
 
         const inProgressProjects = allProjects.filter((p) => p.status === 'IN_PROGRESS').length;
         const completedProjects = allProjects.filter((p) => p.status === 'COMPLETED').length;
@@ -114,6 +124,8 @@ export const dashboardService = {
             inProgressProjects,
             completedProjects,
             delayedProjects,
+            totalMembers,
+            totalAdmins,
             totalEmployees: allEmployees.length,
             pendingSubmissionsCount: mockSubmissions.filter((s) => s.status === 'PENDING').length,
             unreadNotificationsCount: unreadNotifications,
@@ -155,13 +167,12 @@ export const dashboardService = {
         }
       })();
 
-      // 2. PROFILES (public.profiles avec id, email, full_name, role filtré sur role = 'employee')
-      const employeesPromise = (async () => {
+      // 2. PROFILES (public.profiles : tous les profils pour calculer l'effectif global incluant la Direction)
+      const profilesPromise = (async () => {
         try {
           const { data, error } = await supabase
             .from('profiles')
             .select('id, email, full_name, role')
-            .eq('role', 'employee')
             .order('full_name', { ascending: true });
 
           if (error) {
@@ -239,14 +250,19 @@ export const dashboardService = {
       })();
 
       // Exécution en parallèle
-      const [rawProjects, rawEmployees, rawSubmissions, unreadNotificationsCount, rawActivities] =
+      const [rawProjects, rawProfiles, rawSubmissions, unreadNotificationsCount, rawActivities] =
         await Promise.all([
           projectsPromise,
-          employeesPromise,
+          profilesPromise,
           submissionsPromise,
           unreadNotificationsCountPromise,
           activitiesPromise,
         ]);
+
+      const admins = rawProfiles.filter((p) => (p.role || '').toLowerCase() === 'admin');
+      const rawEmployees = rawProfiles.filter((p) => (p.role || '').toLowerCase() !== 'admin');
+      const totalAdmins = Math.max(admins.length, 1);
+      const totalMembers = totalAdmins + rawEmployees.length;
 
       // Calcul des statistiques de projets basées sur les ENUMS réels
       // ('todo', 'in_progress', 'review', 'completed', 'delayed')
@@ -471,6 +487,8 @@ export const dashboardService = {
           inProgressProjects,
           completedProjects,
           delayedProjects,
+          totalMembers,
+          totalAdmins,
           totalEmployees: employees.length,
           pendingSubmissionsCount: rawSubmissions.length,
           unreadNotificationsCount,

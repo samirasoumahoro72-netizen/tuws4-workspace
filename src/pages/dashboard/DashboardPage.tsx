@@ -69,10 +69,15 @@ export const DashboardPage: React.FC = () => {
     inProgressProjects: 0,
     completedProjects: 0,
     delayedProjects: 0,
+    totalMembers: 1,
+    totalAdmins: 1,
     totalEmployees: 0,
     pendingSubmissionsCount: 0,
     unreadNotificationsCount: 0,
   };
+
+  const totalMembers = stats.totalMembers ?? (Math.max(stats.totalAdmins || 1, 1) + (stats.totalEmployees || 0));
+  const totalAdmins = stats.totalAdmins || 1;
 
   const pendingSubmissions = dashboardData?.pendingSubmissions || [];
   const activeProjects = dashboardData?.activeProjects || [];
@@ -218,10 +223,12 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div>
             <div className="font-headline text-2xl font-bold text-primary-container">
-              {isAdmin ? `${stats.totalEmployees} ${stats.totalEmployees > 1 ? 'membres' : 'membre'}` : stats.totalProjects}
+              {isAdmin ? `${totalMembers} ${totalMembers > 1 ? 'membres' : 'membre'}` : stats.totalProjects}
             </div>
             <div className="text-xs text-secondary truncate mt-0.5">
-              {isAdmin ? `1 Direction • ${stats.totalEmployees} Collaborateurs` : 'actifs'}
+              {isAdmin
+                ? `${totalAdmins} Direction • ${stats.totalEmployees} ${stats.totalEmployees > 1 ? 'Collaborateurs' : 'Collaborateur'}`
+                : 'actifs'}
             </div>
           </div>
           <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
