@@ -4,19 +4,17 @@ import { mockProfiles } from './mockData';
 
 const TEAM_PROFILES_KEY = 'tuws_team_profiles_v1';
 
-export const PURGED_EMAILS = [
-  'fatimbamba@gmail.com',
-  'nouraadiatou@gmail.com',
+export const DEMO_EMAILS = [
   'lucas.m@tuwshiuah.com',
   'thomas.l@tuwshiuah.com',
   'sarah.b@tuwshiuah.com',
   'julie.v@tuwshiuah.com',
 ];
 
-export const isTestOrDemoAccount = (p: Partial<Profile>): boolean => {
+export const isDemoAccount = (p: Partial<Profile>): boolean => {
   const email = (p.email || '').trim().toLowerCase();
   const id = (p.id || '').trim();
-  if (PURGED_EMAILS.some((pe) => email.includes(pe))) return true;
+  if (DEMO_EMAILS.some((de) => email === de.toLowerCase())) return true;
   if (/^user-(lucas|thomas|sarah|julie)/i.test(id)) return true;
   return false;
 };
@@ -29,7 +27,7 @@ const getLocalProfiles = (): Profile[] => {
   }
   try {
     const list: Profile[] = JSON.parse(raw);
-    const filtered = list.filter((p) => !isTestOrDemoAccount(p));
+    const filtered = list.filter((p) => !isDemoAccount(p));
     if (filtered.length !== list.length) {
       localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(filtered));
     }
@@ -40,7 +38,7 @@ const getLocalProfiles = (): Profile[] => {
 };
 
 const saveLocalProfiles = (profiles: Profile[]) => {
-  const sanitized = profiles.filter((p) => !isTestOrDemoAccount(p));
+  const sanitized = profiles.filter((p) => !isDemoAccount(p));
   localStorage.setItem(TEAM_PROFILES_KEY, JSON.stringify(sanitized));
 };
 
@@ -49,7 +47,7 @@ export const getBossProfile = (): Profile => {
     const rawBoss = localStorage.getItem('tuws_boss_profile');
     if (rawBoss) {
       const parsed = JSON.parse(rawBoss);
-      if (parsed && !isTestOrDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+      if (parsed && !isDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
         return {
           ...parsed,
           role: 'admin',
@@ -59,7 +57,7 @@ export const getBossProfile = (): Profile => {
     const rawSess = localStorage.getItem('tuwshiuah_workspace_session');
     if (rawSess) {
       const parsed = JSON.parse(rawSess);
-      if (parsed && !isTestOrDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
+      if (parsed && !isDemoAccount(parsed) && (parsed.role === 'admin' || parsed.email?.includes('direction') || parsed.email?.includes('samira'))) {
         return {
           ...parsed,
           role: 'admin',
@@ -70,7 +68,7 @@ export const getBossProfile = (): Profile => {
 
   const local = getLocalProfiles();
   const foundAdmin = local.find(
-    (p) => !isTestOrDemoAccount(p) && (p.role === 'admin' || p.email?.includes('direction') || p.email?.includes('samira'))
+    (p) => !isDemoAccount(p) && (p.role === 'admin' || p.email?.includes('direction') || p.email?.includes('samira'))
   );
   if (foundAdmin) {
     return { ...foundAdmin, role: 'admin' };
@@ -83,6 +81,8 @@ export const getBossProfile = (): Profile => {
 export const profileService = {
   /**
    * Récupère la liste de tous les profils / collaborateurs
+   * Seuls les comptes enregistrés dans Supabase (créés par le Directeur) apparaissent,
+   * ainsi que le profil de la Direction. Les faux comptes démo sont exclus.
    */
   async getAllProfiles(): Promise<Profile[]> {
     if (isSupabaseConfigured) {
@@ -95,20 +95,9 @@ export const profileService = {
         if (!error && data) {
           const isExplicitProd = import.meta.env.VITE_DEMO_MODE === 'false';
           if (data.length > 0 || isExplicitProd) {
-            // Nettoyage et suppression automatique dans Supabase des comptes démo / tests créés
-            const validRows = data.filter((p) => {
-              if (isTestOrDemoAccount(p)) {
-                // Tenter de purger de la base distante en tâche de fond
-                (async () => {
-                  try {
-                    await supabase.rpc('delete_user_account', { target_user_id: p.id });
-                    await supabase.from('profiles').delete().eq('id', p.id);
-                  } catch {}
-                })();
-                return false;
-              }
-              return true;
-            });
+            // Ne filtrer que les anciens comptes fictifs démo (Lucas, Thomas, Sarah, Julie)
+            // Tous les vrais comptes créés par la direction dans Supabase (Fatim Bamba, Noura, etc.) sont conservés
+            const validRows = data.filter((p) => !isDemoAccount(p));
 
             let formatted: Profile[] = validRows.map((p) => {
               const isSamiraOrDir =
@@ -147,7 +136,7 @@ export const profileService = {
       }
     }
 
-    const localList = getLocalProfiles().filter((p) => !isTestOrDemoAccount(p));
+    const localList = getLocalProfiles().filter((p) => !isDemoAccount(p));
     const hasAdminLocal = localList.some((p) => (p.role || '').toLowerCase() === 'admin');
     const fullList = hasAdminLocal ? localList : [getBossProfile(), ...localList];
     return fullList.sort((a, b) => {
@@ -164,7 +153,7 @@ export const profileService = {
    */
   async getProfile(userId: string): Promise<Profile | null> {
     if (!userId) return null;
-    if (isTestOrDemoAccount({ id: userId, email: userId })) return null;
+    if (isDemoAccount({ id: userId, email: userId })) return null;
 
     if (isSupabaseConfigured) {
       try {

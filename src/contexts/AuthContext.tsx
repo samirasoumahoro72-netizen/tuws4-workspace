@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { AuthContextType } from '../types/auth';
 import { Profile, UserRole } from '../types/database';
 import { authService } from '../services/authService';
-import { profileService, isTestOrDemoAccount } from '../services/profileService';
+import { profileService, isDemoAccount } from '../services/profileService';
 import { mockProfiles } from '../services/mockData';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isSupabaseConfigured) {
           const { data, error } = await supabase.auth.getSession();
           if (data?.session && !error) {
-            // Si le compte connecté est un ancien compte de test ou démo purgé, forcer la déconnexion
-            if (isTestOrDemoAccount({ email: data.session.user.email, id: data.session.user.id })) {
+            // Si le compte connecté est un faux compte démo, forcer la déconnexion
+            if (isDemoAccount({ email: data.session.user.email, id: data.session.user.id })) {
               try {
                 await supabase.auth.signOut();
               } catch {}
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newSession?.user || null);
 
         if (newSession?.user) {
-          if (isTestOrDemoAccount({ email: newSession.user.email, id: newSession.user.id })) {
+          if (isDemoAccount({ email: newSession.user.email, id: newSession.user.id })) {
             try {
               await supabase.auth.signOut();
             } catch {}
